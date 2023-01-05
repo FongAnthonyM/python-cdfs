@@ -6,8 +6,8 @@ Reference
     :backlinks: none
 
 
-templatepackage.__main__
+cdfs.__main__
 --------------------
 
-.. automodule:: templatepackage.__main__
+.. automodule:: cdfs.__main__
    :members:
