@@ -1,5 +1,5 @@
 """ timecontentsfile.py
-
+An HDF5 file which tracks the contents of time data in the CDFS.
 """
 # Package Header #
 from ..header import *
@@ -26,12 +26,13 @@ from .contentsfile import ContentsFileMap, ContentsFile
 # Definitions #
 # Classes #
 class TimeContentsFileMap(ContentsFileMap):
-    """A map for BaseHDF5 files."""
+    """A map which outlines a content file with time information."""
     default_maps: Mapping[str, HDF5Map] = {
         "data_content": TimeLeafMap(shape=(0,), maxshape=(None,)),
     }
 
 
 class TimeContentsFile(ContentsFile):
+    """An HDF5 file which tracks the contents of time data in the CDFS."""
     FILE_TYPE: str = "ContentsFile"
     default_map: HDF5Map = TimeContentsFileMap()

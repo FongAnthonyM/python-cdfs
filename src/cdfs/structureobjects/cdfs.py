@@ -18,15 +18,17 @@ import pathlib
 from typing import Any
 
 # Third-Party Packages #
+from baseobjects import BaseObject
 from framestructure import DirectoryTimeFrameInterface, DirectoryTimeFrame
+from hdf5objects import HDF5File
 
 # Local Packages #
-from ..contentsfile import ContentsFile
+from ..contentsfile import ContentsFile, TimeContentFrame
 
 
 # Definitions #
 # Classes #
-class CDFS(DirectoryTimeFrame):
+class CDFS(BaseObject):
     """
 
     Class Attributes:
@@ -36,18 +38,17 @@ class CDFS(DirectoryTimeFrame):
     Args:
 
     """
-    default_frame_type = XLTEKDayFrame
-    content_file_type = ContentsFile
-    content_file_name = "contents.hdf5"
+    default_component_types: dict[str, tuple[type, dict[str, Any]]] = {}
+    default_frame_type: type = TimeContentFrame
+    default_data_file_type: type = HDF5File
+    default_content_file_name: str = "contents.h5"
+    contents_file_type: type = ContentsFile
 
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        s_id: str | None = None,
-        studies_path: pathlib.Path | str | None = None,
-        frames: Iterable[DirectoryTimeFrameInterface] | None = None,
         mode: str = 'r',
         update: bool = False,
         open_: bool = True,
@@ -56,7 +57,18 @@ class CDFS(DirectoryTimeFrame):
         **kwargs: Any,
     ) -> None:
         # New Attributes #
+        self._path: pathlib.Path | None = None
+        self.mode: str = 'r'
+
+        self.contents_file_name: str = self.default_content_file_name
         self.contents_file: ContentsFile | None = None
+
+        self.data_file_type: type = self.default_data_file_type
+
+        self.data: DirectoryTimeFrameInterface | None = None
+        self.child_paths: set[pathlib.Path] = {}
+
+        self.components: dict[str, Any] = {}
 
         # Parent Attributes #
         super().__init__(init=False)
@@ -65,9 +77,6 @@ class CDFS(DirectoryTimeFrame):
         if init:
             self.construct(
                 path=path,
-                s_id=s_id,
-                studies_path=studies_path,
-                frames=frames,
                 mode=mode,
                 update=update,
                 load=load,
@@ -75,14 +84,23 @@ class CDFS(DirectoryTimeFrame):
                 **kwargs,
             )
 
+    @property
+    def path(self) -> pathlib.Path:
+        """The path to the CDFS."""
+        return self._path
+
+    @path.setter
+    def path(self, value: str | pathlib.Path) -> None:
+        if isinstance(value, pathlib.Path) or value is None:
+            self._path = value
+        else:
+            self._path = pathlib.Path(value)
+
     # Instance Methods
     # Constructors/Destructors
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        s_id: str | None = None,
-        studies_path: pathlib.Path | str | None = None,
-        frames: Iterable[DirectoryTimeFrameInterface] | None = None,
         mode: str = 'r',
         update: bool = False,
         open_: bool = False,
@@ -102,28 +120,58 @@ class CDFS(DirectoryTimeFrame):
             load: Determines if the frames will be constructed.
             **kwargs: The keyword arguments to create contained frames.
         """
+        if path is not None:
+            self.path = path
 
-        super().construct(path=path, frames=frames, mode=mode, update=update, open_=open_, load=False)
+        if mode is not None:
+            self.mode = mode
 
-        if self.path is not None and self.studies_path is None:
-            self.studies_path = self.path.parent
+        self.construct_components()
+        self.construct_contents_file()
+        self.construct_data()
 
-    def construct_frames(self, open_=False, **kwargs) -> None:
-        """Constructs the frames for this object.
+    def construct_components(self, **component_kwargs: Any) -> None:
+        """Constructs the components.
 
         Args:
-            open_: Determines if the frames will remain open after construction.
-            **kwargs: The keyword arguments to create contained frames.
+            component_kwargs: The keyword arguments for the components.
         """
-        if self.contents_file is None:
-            self.contents_file = self.content_file_type(file=self.path / self.content_file_name)
+        for name, (component, kwargs)  in self.default_component_types.items():
+            new_kwargs = component_kwargs.get(name, {})
+            temp_kwargs = kwargs | new_kwargs
+            self.components[name] = component(composite=self, **temp_kwargs)
 
-        with self.contents_file:
-            for path in self.path.glob(self.glob_condition):
-                if path not in self.frame_paths:
-                    if self.frame_creation_condition(path):
-                        self.frames.append(self.frame_type(s_id=self.subject_id, path=path, open_=open_, **kwargs))
-                        self.frame_paths.add(path)
-        self.frames.sort(key=lambda frame: frame.start_timestamp)
-        self.clear_caches()
+    def construct_contents_file(
+        self,
+        open_: bool = True,
+        load: bool = True,
+        create: bool = False,
+        require: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        content_path = self.path / self.contents_file_name
+        self.contents_file = self.contents_file_type(
+            file=content_path,
+            mode=self.mode,
+            open_=open_,
+            load=load,
+            create=create,
+            require=require,
+            **kwargs,
+        )
 
+    def construct_data(self, **kwargs):
+        self.data = self.default_frame_type(
+            path=self.path,
+            content_map=self.contents_file.components["contents"].get_data_root(),
+            **kwargs
+        )
+
+    def create(self):
+        if not self.path.is_dir():
+            self.path.mkdir()
+
+        if self.contents is None:
+            self.construct_contents_file(create=True)
+        else:
+            self.contents_file.require()

@@ -17,6 +17,7 @@ __email__ = __email__
 # Third-Party Packages #
 from hdf5objects.dataset import SampleAxisMap, TimeAxisMap, IDAxisMap
 from hdf5objects.dataset import ObjectReferenceComponent, TimeSeriesComponent
+import numpy as np
 
 # Local Packages #
 from ..contentcomponents import TimeNodeComponent
@@ -27,8 +28,8 @@ from .ordernodemap import OrderNodeMap
 # Classes #
 class TimeNodeMap(OrderNodeMap):
     """A map for a dataset that outlines timed data across multiple files."""
-    default_attribute_names = {"map_type": "TimeNodeMap", "t_axis": "t_axis"}
-    default_attributes = {"t_axis": 0}
+    default_attribute_names = OrderNodeMap.default_attribute_names | {"t_axis": "t_axis"}
+    default_attributes = {"t_axis": 0, "map_type": "TimeNodeMap"}
     default_axis_maps = [{
         "id_axis": IDAxisMap(component_kwargs = {"axis": {"is_uuid": True}}),
         "start_time_axis": TimeAxisMap(),
@@ -36,6 +37,9 @@ class TimeNodeMap(OrderNodeMap):
         "start_sample_axis": SampleAxisMap(),
         "end_sample_axis": SampleAxisMap(),
     }]
+    default_dtype = OrderNodeMap.default_dtype + (
+        ("Sample Rate", np.float64),
+    )
     default_component_types = {
         "object_reference": (ObjectReferenceComponent, {"reference_fields": {"dataset": "Dataset"},
                                                         "primary_reference_field": "dataset",

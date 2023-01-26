@@ -26,11 +26,13 @@ import numpy as np
 # Classes #
 class OrderLeafMap(DatasetMap):
     """A map for a dataset that outlines sequential data across multiple files."""
-    default_attribute_names = {"map_type": "map_type"}
+    default_attribute_names = {"map_type": "map_type", "max_shape": "max_shape", "min_shape": "min_shape"}
     default_attributes = {"map_type": "OrderLeafMap"}
     default_dtype = (
         ("Path", str),
         ("Length", np.uint64),
+        ("Minimum ndim", np.uint64),
+        ("Maximum ndim", np.uint64),
     )
     default_axis_maps = [{
         "id_axis": IDAxisMap(),

@@ -15,5 +15,6 @@ __email__ = __email__
 # Local Packages #
 from .contentmaps import *
 from .contentframes import *
+from .contentcomponents import *
 from .contentsfile import ContentsFileMap, ContentsFile
 from .timecontentsfile import TimeContentsFileMap, TimeContentsFile

@@ -14,6 +14,7 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from collections.abc import Iterable
+from decimal import Decimal
 import pathlib
 from typing import Any
 
@@ -60,6 +61,7 @@ class TimeContentFrame(DirectoryTimeFrame):
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
+        content_map: HDF5Dataset | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
         mode: str = 'a',
         update: bool = False,
@@ -79,7 +81,46 @@ class TimeContentFrame(DirectoryTimeFrame):
 
         # Object Construction #
         if init:
-            self.construct(path=path, frames=frames, mode=mode, update=update, open_=open_, build=build, **kwargs)
+            self.construct(
+                path=path,
+                content_map=content_map,
+                frames=frames,
+                mode=mode,
+                update=update,
+                open_=open_,
+                build=build,
+                **kwargs,
+            )
+
+    @property
+    def start_datetime(self) -> Timestamp | None:
+        """The start datetime of this frame."""
+        return self.start_datetimes[0] if self.content_map is not None else None
+
+    @property
+    def start_nanostamp(self) -> float | None:
+        """The start timestamp of this frame."""
+        return self.start_nanostamps[0] if self.content_map is not None else None
+
+    @property
+    def start_timestamp(self) -> float | None:
+        """The start timestamp of this frame."""
+        return self.start_timestamps[0] if self.content_map is not None else None
+
+    @property
+    def end_datetime(self) -> Timestamp | None:
+        """The end datetime of this frame."""
+        return self.end_datetimes[-1] if self.content_map is not None else None
+
+    @property
+    def end_nanostamp(self) -> float | None:
+        """The end timestamp of this frame."""
+        return self.end_nanostamps[-1] if self.content_map is not None else None
+
+    @property
+    def end_timestamp(self) -> float | None:
+        """The end timestamp of this frame."""
+        return self.end_timestamps[-1] if self.content_map is not None else None
 
     # Instance Methods #
     # Constructors/Destructors
@@ -109,7 +150,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         if content_map is not None:
             self.content_map = content_map
 
-        super().construct(pathe=path, frames=frames, mode=mode, update=update)
+        super().construct(path=path, frames=frames, mode=mode, update=update)
 
         if build:
             self.construct_frames(open_=open_, mode=self.mode, **kwargs)
@@ -122,14 +163,13 @@ class TimeContentFrame(DirectoryTimeFrame):
             **kwargs: The keyword arguments to create contained frames.
         """
         for frame_info in self.content_map.get_item_dicts_iter():
-            path = self.path / frame_info["Paths"]
+            path = self.path / frame_info["Path"]
             self.frame_paths.add(path)
             self.frames.append(self.frame_type(
-                path=path,
+                path,
                 open_=open_,
                 **kwargs,
             ))
-        self.frames.sort(key=lambda frame: frame.start_timestamp)
         self.clear_caches()
 
     def construct_node_frames(self, open_=False, **kwargs) -> None:
@@ -140,16 +180,10 @@ class TimeContentFrame(DirectoryTimeFrame):
             **kwargs: The keyword arguments to create contained frames.
         """
         for frame_info in self.content_map.get_item_dicts_iter():
-            path = self.path / frame_info["Paths"]
-            dataset = self.content_map.file[frame_info["Datasets"]]
-            if dataset.attributes["map_type"] == "TimeNodeMap":
-                dataset.set_map(self.node_map())
-            else:
-                dataset.set_map(self.leaf_map())
-
+            path = self.path / frame_info["Path"]
+            dataset = self.content_map.file[frame_info["Dataset"]]
             self.frame_paths.add(path)
             self.frames.append(self.node_frame_type(path=path, content_map=dataset, open_=open_, **kwargs))
-        self.frames.sort(key=lambda frame: frame.start_timestamp)
         self.clear_caches()
 
     def construct_frames(self, open_=False, **kwargs) -> None:
@@ -165,6 +199,24 @@ class TimeContentFrame(DirectoryTimeFrame):
             self.construct_leaf_frames(open_=open_, **kwargs)
 
     # Getters and Setters
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    def get_min_shape(self) -> tuple[int]:
+        """Get the minimum shapes from the contained frames/objects if they are different across axes.
+
+        Returns:
+            The minimum shapes of the contained frames/objects.
+        """
+        return tuple(int(d) for d in self.content_map.attributes["min_shape"])
+
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    def get_max_shape(self) -> tuple[int]:
+        """Get the maximum shapes from the contained frames/objects if they are different across axes.
+
+        Returns:
+            The maximum shapes of the contained frames/objects.
+        """
+        return tuple(int(d) for d in self.content_map.attributes["max_shape"])
+
     @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_lengths(self) -> tuple[int]:
         """Get the lengths of the contained frames/objects.
@@ -227,6 +279,24 @@ class TimeContentFrame(DirectoryTimeFrame):
             All the end_timestamp timestamps.
         """
         return self.content_map.components["end_times"].get_timestamps()
+
+    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    def get_sample_rates(self) -> tuple[float]:
+        """Get the sample rates of all contained frames.
+
+        Returns:
+            The sample rates of all contained frames.
+        """
+        return tuple(float(r) for r in self.content_map.get_field("Sample Rate"))
+
+    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    def get_sample_rates_decimal(self) -> tuple[Decimal]:
+        """Get the sample rates of all contained frames.
+
+        Returns:
+            The sample rates of all contained frames.
+        """
+        return tuple(Decimal(r) for r in self.content_map.get_field("Sample Rate"))
 
 
 # Assign Cyclic Definitions
