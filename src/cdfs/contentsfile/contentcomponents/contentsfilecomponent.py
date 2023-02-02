@@ -15,15 +15,14 @@ __email__ = __email__
 from typing import Any
 
 # Third-Party Packages #
-from baseobjects.composition import Component
-from hdf5objects import HDF5Dataset
+from hdf5objects import HDF5Dataset, HDF5BaseComponent
 
 # Local Packages #
 
 
 # Definitions #
 # Classes #
-class ContentsFileComponent(Component):
+class ContentsFileComponent(HDF5BaseComponent):
     # Magic Methods
     # Constructors/Destructors
     def __init__(

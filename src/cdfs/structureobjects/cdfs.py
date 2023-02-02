@@ -95,6 +95,10 @@ class CDFS(BaseObject):
             self._path = value
         else:
             self._path = pathlib.Path(value)
+            
+    @property
+    def contents_path(self) -> pathlib.Path:
+        return self.path / self.contents_file_name
 
     # Instance Methods
     # Constructors/Destructors
@@ -127,8 +131,9 @@ class CDFS(BaseObject):
             self.mode = mode
 
         self.construct_components()
-        self.construct_contents_file()
-        self.construct_data()
+        if self.contents_path.is_file():
+            self.construct_contents_file()
+            self.construct_data()
 
     def construct_components(self, **component_kwargs: Any) -> None:
         """Constructs the components.
@@ -144,14 +149,16 @@ class CDFS(BaseObject):
     def construct_contents_file(
         self,
         open_: bool = True,
-        load: bool = True,
+        load: bool | None = None,
         create: bool = False,
         require: bool = False,
         **kwargs: Any,
     ) -> None:
-        content_path = self.path / self.contents_file_name
+        if load is None:
+            load = self.contents_path.is_file()
+
         self.contents_file = self.contents_file_type(
-            file=content_path,
+            file=self.contents_path,
             mode=self.mode,
             open_=open_,
             load=load,
@@ -167,11 +174,11 @@ class CDFS(BaseObject):
             **kwargs
         )
 
-    def create(self):
-        if not self.path.is_dir():
-            self.path.mkdir()
+    def require(self, **kwargs):
+        self.path.mkdir(exist_ok=True)
 
-        if self.contents is None:
-            self.construct_contents_file(create=True)
+        if self.contents_file is None:
+            self.construct_contents_file(create=True, require=True, **kwargs)
+            self.construct_data()
         else:
-            self.contents_file.require()
+            self.contents_file.require(**kwargs)
