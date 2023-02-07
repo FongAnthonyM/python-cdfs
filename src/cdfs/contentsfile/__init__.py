@@ -13,8 +13,8 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
+from .contentcomponents import *
 from .contentmaps import *
 from .contentframes import *
-from .contentcomponents import *
 from .contentsfile import ContentsFileMap, ContentsFile
 from .timecontentsfile import TimeContentsFileMap, TimeContentsFile

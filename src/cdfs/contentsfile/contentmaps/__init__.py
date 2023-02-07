@@ -13,7 +13,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .orderleafmap import OrderLeafMap
-from .ordernodemap import OrderNodeMap
-from .timeleafmap import TimeLeafMap
-from .timenodemap import TimeNodeMap
+from .contentmaps import ContentDatasetMap, ContentGroupMap
+from .timecontentmaps import TimeContentDatasetMap, TimeContentGroupMap

@@ -22,11 +22,11 @@ from typing import Any
 from baseobjects.cachingtools import timed_keyless_cache
 from dspobjects.time import Timestamp, nanostamp
 from framestructure import DirectoryTimeFrame, DirectoryTimeFrameInterface
-from hdf5objects import HDF5Dataset
+from hdf5objects import HDF5Group
 import numpy as np
 
 # Local Packages #
-from ..contentmaps import OrderNodeMap, TimeNodeMap, TimeLeafMap
+from ..contentmaps import TimeContentGroupMap
 
 
 # Definitions #
@@ -53,15 +53,14 @@ class TimeContentFrame(DirectoryTimeFrame):
         init: Determines if this object will construct.
     """
     default_node_frame_type: DirectoryTimeFrameInterface | None = None
-    default_node_map: type = TimeNodeMap
-    default_leaf_map: type = TimeLeafMap
+    default_node_map: type = TimeContentGroupMap
 
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        content_map: HDF5Dataset | None = None,
+        content_map: HDF5Group | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
         mode: str = 'a',
         update: bool = False,
@@ -74,7 +73,6 @@ class TimeContentFrame(DirectoryTimeFrame):
         self.content_map: HDF5Dataset | None = None
         self.node_frame_type: type | None = self.default_node_frame_type
         self.node_map: type = self.default_node_map
-        self.leaf_map: type = self.default_leaf_map
 
         # Parent Attributes #
         super().__init__(init=False)
@@ -127,7 +125,7 @@ class TimeContentFrame(DirectoryTimeFrame):
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        content_map: HDF5Dataset | None = None,
+        content_map: HDF5Group | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
         mode: str = 'a',
         update: bool = False,
@@ -162,7 +160,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
-        for frame_info in self.content_map.get_item_dicts_iter():
+        for frame_info in self.content_map.components["tree_node"].map_dataset.get_item_dicts_iter():
             path = self.path / frame_info["Path"]
             self.frame_paths.add(path)
             self.frames.append(self.frame_type(
@@ -179,11 +177,11 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
-        for frame_info in self.content_map.get_item_dicts_iter():
+        for frame_info in self.content_map.components["tree_node"].map_dataset.get_item_dicts_iter():
             path = self.path / frame_info["Path"]
-            dataset = self.content_map.file[frame_info["Dataset"]]
+            group = self.content_map.file[frame_info["Node"]]
             self.frame_paths.add(path)
-            self.frames.append(self.node_frame_type(path=path, content_map=dataset, open_=open_, **kwargs))
+            self.frames.append(self.node_frame_type(path=path, content_map=group, open_=open_, **kwargs))
         self.clear_caches()
 
     def construct_frames(self, open_=False, **kwargs) -> None:
@@ -193,7 +191,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
-        if isinstance(self.content_map.map, OrderNodeMap):
+        if self.content_map.attributes["tree_type"] == "Node":
             self.construct_node_frames(open_=open_, **kwargs)
         else:
             self.construct_leaf_frames(open_=open_, **kwargs)

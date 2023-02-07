@@ -1,4 +1,4 @@
-""" timenodemap.py
+""" timecontentmaps.py
 A map for a dataset that outlines timed data across multiple files.
 """
 # Package Header #
@@ -20,26 +20,22 @@ from hdf5objects.dataset import ObjectReferenceComponent, TimeSeriesComponent
 import numpy as np
 
 # Local Packages #
-from ..contentcomponents import TimeNodeComponent
-from .ordernodemap import OrderNodeMap
+from ..contentcomponents import TimeContentDatasetComponent, TimeContentGroupComponent
+from .contentmaps import ContentDatasetMap, ContentGroupMap
 
 
 # Definitions #
 # Classes #
-class TimeNodeMap(OrderNodeMap):
+class TimeContentDatasetMap(ContentDatasetMap):
     """A map for a dataset that outlines timed data across multiple files."""
-    default_attribute_names = OrderNodeMap.default_attribute_names | {"t_axis": "t_axis"}
-    default_attributes = {"t_axis": 0, "map_type": "TimeNodeMap"}
+    default_attribute_names = ContentDatasetMap.default_attribute_names | {"t_axis": "t_axis"}
+    default_attributes = {"t_axis": 0}
+    default_dtype = ContentDatasetMap.default_dtype + (("Sample Rate", np.float64),)
     default_axis_maps = [{
         "id_axis": IDAxisMap(component_kwargs = {"axis": {"is_uuid": True}}),
         "start_time_axis": TimeAxisMap(),
         "end_time_axis": TimeAxisMap(),
-        "start_sample_axis": SampleAxisMap(),
-        "end_sample_axis": SampleAxisMap(),
     }]
-    default_dtype = OrderNodeMap.default_dtype + (
-        ("Sample Rate", np.float64),
-    )
     default_component_types = {
         "object_reference": (ObjectReferenceComponent, {"reference_fields": {"dataset": "Dataset"},
                                                         "primary_reference_field": "dataset",
@@ -47,6 +43,14 @@ class TimeNodeMap(OrderNodeMap):
                              ),
         "start_times": (TimeSeriesComponent, {"scale_name": "start_time_axis"}),
         "end_times": (TimeSeriesComponent, {"scale_name": "end_time_axis"}),
-        "node_content": (TimeNodeComponent, {}),
+        "tree_node": (TimeContentDatasetComponent, {}),
     }
-    default_kwargs = {"shape": (0,), "maxshape": (None,)}
+
+
+class TimeContentGroupMap(ContentGroupMap):
+    """A group map which outlines a group with basic node methods."""
+    default_attributes = {"tree_type": "Node"}
+    default_maps = {"map_dataset": TimeContentDatasetMap()}
+    default_component_types = {
+        "tree_node": (TimeContentGroupComponent, {}),
+    }

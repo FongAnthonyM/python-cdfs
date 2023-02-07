@@ -18,7 +18,7 @@ import pathlib
 from typing import Any
 
 # Third-Party Packages #
-from baseobjects import BaseObject
+from baseobjects import BaseComposite
 from framestructure import DirectoryTimeFrameInterface, DirectoryTimeFrame
 from hdf5objects import HDF5File
 
@@ -28,7 +28,7 @@ from ..contentsfile import ContentsFile, TimeContentFrame
 
 # Definitions #
 # Classes #
-class CDFS(BaseObject):
+class CDFS(BaseComposite):
     """
 
     Class Attributes:
@@ -130,21 +130,11 @@ class CDFS(BaseObject):
         if mode is not None:
             self.mode = mode
 
-        self.construct_components()
+        super().construct(**kwargs)
+
         if self.contents_path.is_file():
             self.construct_contents_file()
             self.construct_data()
-
-    def construct_components(self, **component_kwargs: Any) -> None:
-        """Constructs the components.
-
-        Args:
-            component_kwargs: The keyword arguments for the components.
-        """
-        for name, (component, kwargs)  in self.default_component_types.items():
-            new_kwargs = component_kwargs.get(name, {})
-            temp_kwargs = kwargs | new_kwargs
-            self.components[name] = component(composite=self, **temp_kwargs)
 
     def construct_contents_file(
         self,

@@ -15,7 +15,7 @@ __email__ = __email__
 from typing import Any
 
 # Third-Party Packages #
-from hdf5objects import HDF5Dataset, HDF5BaseComponent
+from hdf5objects import HDF5Group, HDF5BaseComponent
 
 # Local Packages #
 
@@ -66,7 +66,7 @@ class ContentsFileComponent(HDF5BaseComponent):
 
         super().construct(composite=composite, **kwargs)
 
-    def get_data_root(self) -> HDF5Dataset:
+    def get_data_root(self) -> HDF5Group:
         """Get the dataset which is the root of the data within this file.
 
         Returns:
