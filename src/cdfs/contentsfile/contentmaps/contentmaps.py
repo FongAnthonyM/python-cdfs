@@ -22,7 +22,7 @@ from hdf5objects.treehierarchy import BaseNodeDatasetMap, BaseNodeGroupMap
 import numpy as np
 
 # Local Packages #
-from ..contentcomponents import ContentDatasetComponent
+from ..contentcomponents import ContentDatasetComponent, ContentGroupComponent
 
 
 # Definitions #
@@ -56,5 +56,5 @@ class ContentGroupMap(BaseNodeGroupMap):
     default_map_names = {"map_dataset": "map_dataset"}
     default_maps = {"map_dataset": ContentDatasetMap()}
     default_component_types = {
-        "tree_node": (NodeGroupComponent, {}),
+        "tree_node": (ContentGroupComponent, {}),
     }

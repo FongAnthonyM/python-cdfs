@@ -13,12 +13,14 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from datetime import datetime
+from decimal import Decimal
 from typing import Any
 import uuid
 
 # Third-Party Packages #
 from dspobjects.time import nanostamp
-from hdf5objects import HDF5Dataset
+from hdf5objects import HDF5Map, HDF5Dataset
 from hdf5objects.dataset import BaseDatasetComponent
 import numpy as np
 
@@ -179,7 +181,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         item = {}
 
         if path is not None:
-            item["Path"] = map_.get_object(require=True, file=self.composite.file).ref
+            item["Path"] = path
 
         if length is not None:
             item["Length"] = length
@@ -202,10 +204,10 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             self.id_axis.components["axis"].insert_id(id_, index=index)
 
         if start is not None:
-            self.start_axis.set_item(index, start)
+            self.start_axis.set_item(index, nanostamp(start))
 
         if end is not None:
-            self.end_axis.set_item(index, end)
+            self.end_axis.set_item(index, nanostamp(end))
 
     def append_entry(
         self,
@@ -234,7 +236,6 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         """
         self.append_entry_dict(
             item={
-                "Node": child,
                 "Path": path,
                 "Length": length,
                 "Minimum ndim": len(min_shape),
@@ -279,11 +280,11 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         self.insert_entry_dict(
             index=index,
             item={
-                "Node": child,
                 "Path": path,
                 "Length": length,
                 "Minimum ndim": len(min_shape),
                 "Maximum ndim": len(max_shape),
+                "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
             },
             map_=map_,
         )

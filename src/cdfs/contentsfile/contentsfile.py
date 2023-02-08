@@ -20,7 +20,7 @@ from hdf5objects import BaseHDF5, BaseHDF5Map, HDF5Map
 
 # Local Packages #
 from .contentcomponents import ContentsFileComponent
-from .contentmaps import OrderLeafMap
+from .contentmaps import ContentGroupMap
 
 
 # Definitions #
@@ -29,7 +29,7 @@ class ContentsFileMap(BaseHDF5Map):
     """A map which outlines a generic content file."""
     default_map_names: Mapping[str, str] = {"data_content": "data_content"}
     default_maps: Mapping[str, HDF5Map] = {
-        "data_content": OrderLeafMap(shape=(0,), maxshape=(None,)),
+        "data_content": ContentGroupMap(),
     }
 
 

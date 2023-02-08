@@ -20,7 +20,7 @@ import uuid
 
 # Third-Party Packages #
 from dspobjects.time import nanostamp
-from hdf5objects import HDF5Dataset
+from hdf5objects import HDF5Map, HDF5Dataset
 from hdf5objects.treehierarchy import NodeDatasetComponent
 import numpy as np
 
@@ -174,7 +174,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         item = {}
 
         if path is not None:
-            item["Path"] = map_.get_object(require=True, file=self.composite.file).ref
+            item["Path"] = path
 
         if length is not None:
             item["Length"] = length
@@ -214,7 +214,6 @@ class ContentDatasetComponent(NodeDatasetComponent):
         """
         self.append_entry_dict(
             item={
-                "Node": child,
                 "Path": path,
                 "Length": length,
                 "Minimum ndim": len(min_shape),
@@ -250,7 +249,6 @@ class ContentDatasetComponent(NodeDatasetComponent):
         self.insert_entry_dict(
             index=index,
             item={
-                "Node": child,
                 "Path": path,
                 "Length": length,
                 "Minimum ndim": len(min_shape),

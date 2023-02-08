@@ -13,6 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from collections.abc import Iterable
 from datetime import datetime, date, tzinfo
 from decimal import Decimal
 from typing import Any
@@ -39,6 +40,7 @@ class ContentGroupComponent(NodeGroupComponent):
     Args:
         composite: The object which this object is a component of.
         insert_name: The attribute name of the method to use as the insert recursive entry method.
+        init: Determines if this object will construct.
         **kwargs: Keyword arguments for inheritance.
     """
     # Magic Methods #
@@ -47,6 +49,7 @@ class ContentGroupComponent(NodeGroupComponent):
         self,
         composite: Any = None,
         insert_name: str | None = None,
+        init: bool = True,
         **kwargs: Any,
     ) -> None:
         # New Attributes #
@@ -131,11 +134,11 @@ class ContentGroupComponent(NodeGroupComponent):
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
-        if map_ is None:
+        if map_ is None and self.child_map_type is not None:
             map_ = self.child_map_type(name=f"{self.composite.name}/{path}")
             self.composite.map.set_item(map_)
 
-        self.map_dataset.insert_entry(
+        self.map_dataset.components[self.node_component_name].insert_entry(
             index=index,
             path=path,
             map_=map_,
@@ -145,7 +148,7 @@ class ContentGroupComponent(NodeGroupComponent):
             id_=id_,
         )
 
-        return map_.require(require=True)
+        return None if map_ is None else map_.get_object(require=True, file=self.composite.file)
 
     def insert_recursive_entry_default(
         self,
@@ -159,6 +162,7 @@ class ContentGroupComponent(NodeGroupComponent):
         """Inserts an entry recursively into its children using indicies.
 
         Args:
+            indicies: The indicies to recursively insert into.
             paths: The path names which the entry represents.
             map_: The map to the object that should be stored in the entry.
             length: The number of samples in the entry.
@@ -194,7 +198,7 @@ class ContentGroupComponent(NodeGroupComponent):
                 length=length,
                 min_shape=min_shape,
                 max_shape=max_shape,
-                id_=id_,
+                ids=ids,
             )
 
             self.map_dataset.components[self.node_component_name].set_entry(

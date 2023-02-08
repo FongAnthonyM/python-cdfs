@@ -19,7 +19,7 @@ from collections.abc import Mapping
 from hdf5objects import HDF5Map
 
 # Local Packages #
-from .contentmaps import TimeLeafMap
+from .contentmaps import TimeContentDatasetMap
 from .contentsfile import ContentsFileMap, ContentsFile
 
 
@@ -28,7 +28,7 @@ from .contentsfile import ContentsFileMap, ContentsFile
 class TimeContentsFileMap(ContentsFileMap):
     """A map which outlines a content file with time information."""
     default_maps: Mapping[str, HDF5Map] = {
-        "data_content": TimeLeafMap(shape=(0,), maxshape=(None,)),
+        "data_content": TimeContentDatasetMap(shape=(0,), maxshape=(None,)),
     }
 
 

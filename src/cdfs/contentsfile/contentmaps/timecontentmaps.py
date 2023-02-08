@@ -37,8 +37,8 @@ class TimeContentDatasetMap(ContentDatasetMap):
         "end_time_axis": TimeAxisMap(),
     }]
     default_component_types = {
-        "object_reference": (ObjectReferenceComponent, {"reference_fields": {"dataset": "Dataset"},
-                                                        "primary_reference_field": "dataset",
+        "object_reference": (ObjectReferenceComponent, {"reference_fields": {"node": "Node"},
+                                                        "primary_reference_field": "node",
                                                         }
                              ),
         "start_times": (TimeSeriesComponent, {"scale_name": "start_time_axis"}),
