@@ -215,7 +215,10 @@ class TimeContentGroupComponent(ContentGroupComponent):
             index, dt = self.map_dataset.components["start_times"].find_time_index(start, approx=True, tails=True)
 
             if nanostamp(dt) == start:
-                return index, self.map_dataset.components["object_reference"].get_object(index, ref_name="node")
+                if self.child_map_type is not None:
+                    return index, self.map_dataset.components["object_reference"].get_object(index, ref_name="node")
+                else:
+                    return index, None
         else:
             index = 0
 
@@ -272,7 +275,10 @@ class TimeContentGroupComponent(ContentGroupComponent):
             index, dt = self.map_dataset.components["start_times"].find_time_index(start_date, approx=True, tails=True)
 
             if dt.date() == start_date.date():
-                return index, self.map_dataset.components["object_reference"].get_object(index, ref_name="node")
+                if self.child_map_type is not None:
+                    return index, self.map_dataset.components["object_reference"].get_object(index, ref_name="node")
+                else:
+                    return index, None
         else:
             index = 0
 

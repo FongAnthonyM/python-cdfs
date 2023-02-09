@@ -20,10 +20,10 @@ from typing import Any
 # Third-Party Packages #
 from baseobjects import BaseComposite
 from framestructure import DirectoryTimeFrameInterface, DirectoryTimeFrame
-from hdf5objects import HDF5File
+from hdf5objects import HDF5File, HDF5Group
 
 # Local Packages #
-from ..contentsfile import ContentsFile, TimeContentFrame
+from ..contentsfile import ContentsFile, TimeContentFrame, TimeContentGroupComponent
 
 
 # Definitions #
@@ -66,7 +66,6 @@ class CDFS(BaseComposite):
         self.data_file_type: type = self.default_data_file_type
 
         self.data: DirectoryTimeFrameInterface | None = None
-        self.child_paths: set[pathlib.Path] = {}
 
         self.components: dict[str, Any] = {}
 
@@ -99,6 +98,14 @@ class CDFS(BaseComposite):
     @property
     def contents_path(self) -> pathlib.Path:
         return self.path / self.contents_file_name
+
+    @property
+    def contents_root(self) -> HDF5Group:
+        return self.contents_file.contents_root
+
+    @property
+    def contents_root_node(self) -> TimeContentGroupComponent:
+        return self.contents_file.contents_root_node
 
     # Instance Methods
     # Constructors/Destructors
@@ -160,7 +167,7 @@ class CDFS(BaseComposite):
     def construct_data(self, **kwargs):
         self.data = self.default_frame_type(
             path=self.path,
-            content_map=self.contents_file.components["contents"].get_data_root(),
+            content_map=self.contents_root,
             **kwargs
         )
 
@@ -172,3 +179,9 @@ class CDFS(BaseComposite):
             self.construct_data()
         else:
             self.contents_file.require(**kwargs)
+
+    def get_start_datetime(self):
+        return self.contents_root_node.get_start_datetime()
+
+    def get_end_datetime(self):
+        return self.contents_root_node.get_end_datetime()

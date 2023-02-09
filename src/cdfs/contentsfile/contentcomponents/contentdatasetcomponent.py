@@ -119,7 +119,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         Args:
             shape: The new shape to join with.
         """
-        old_min = self.composite.attributes.get("min_shape", ())
+        old_min = self.composite.attributes.get("min_shape", shape)
         min_ndim = min(len(old_min), len(shape))
         if min_ndim == 0:
             true_min = np.array([])

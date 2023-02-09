@@ -16,10 +16,10 @@ __email__ = __email__
 from collections.abc import Mapping
 
 # Third-Party Packages #
-from hdf5objects import BaseHDF5, BaseHDF5Map, HDF5Map
+from hdf5objects import BaseHDF5, BaseHDF5Map, HDF5Map, HDF5Group
 
 # Local Packages #
-from .contentcomponents import ContentsFileComponent
+from .contentcomponents import ContentsFileComponent, ContentGroupComponent
 from .contentmaps import ContentGroupMap
 
 
@@ -27,9 +27,9 @@ from .contentmaps import ContentGroupMap
 # Classes #
 class ContentsFileMap(BaseHDF5Map):
     """A map which outlines a generic content file."""
-    default_map_names: Mapping[str, str] = {"data_content": "data_content"}
+    default_map_names: Mapping[str, str] = {"contents": "contents"}
     default_maps: Mapping[str, HDF5Map] = {
-        "data_content": ContentGroupMap(),
+        "contents": ContentGroupMap(),
     }
 
 
@@ -38,3 +38,11 @@ class ContentsFile(BaseHDF5):
     FILE_TYPE: str = "ContentsFile"
     default_map: HDF5Map = ContentsFileMap()
     default_component_types = {"contents": (ContentsFileComponent, {})}
+
+    @property
+    def contents_root(self) -> HDF5Group:
+        return self.components["contents"].get_root()
+
+    @property
+    def contents_root_node(self) -> ContentGroupComponent:
+        return self.components["contents"].get_root_node_component()
