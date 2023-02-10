@@ -37,10 +37,16 @@ class TimeContentDatasetMap(ContentDatasetMap):
         "end_time_axis": TimeAxisMap(),
     }]
     default_component_types = {
-        "object_reference": (ObjectReferenceComponent, {"reference_fields": {"node": "Node"},
-                                                        "primary_reference_field": "node",
-                                                        }
-                             ),
+        "object_reference": (ObjectReferenceComponent, {
+            "reference_fields": {"node": "Node"},
+            "primary_reference_field": "node",
+        }),
+        "region_reference": (RegionReferenceComponent, {
+            "single_reference_fields": {
+                "min_shapes": ("min_shapes_dataset", "Minimum Shape"),
+                "max_shapes": ("max_shapes_dataset", "Maximum Shape"),
+            },
+        }),
         "start_times": (TimeSeriesComponent, {"scale_name": "start_time_axis"}),
         "end_times": (TimeSeriesComponent, {"scale_name": "end_time_axis"}),
         "tree_node": (TimeContentDatasetComponent, {}),
@@ -50,7 +56,12 @@ class TimeContentDatasetMap(ContentDatasetMap):
 class TimeContentGroupMap(ContentGroupMap):
     """A group map which outlines a group with basic node methods."""
     default_attributes = {"tree_type": "Node"}
-    default_maps = {"map_dataset": TimeContentDatasetMap()}
+    default_maps = {
+        "node_map": TimeContentDatasetMap(),
+        "min_shapes": ContentShapesDatasetMap(),
+        "max_shapes": ContentShapesDatasetMap(),
+    }
+
     default_component_types = {
         "tree_node": (TimeContentGroupComponent, {}),
     }

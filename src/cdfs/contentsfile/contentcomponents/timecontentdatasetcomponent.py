@@ -159,7 +159,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        length: int | None = None,
+        axis: int | None = None,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
@@ -173,7 +173,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             end: The end time of the entry.
             sample_rate: The sample rate of the entry.
             map_: The map to the object that should be stored in the entry.
-            length: The number of samples in the entry.
+            axis: The axis dimension number which the data concatiated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
@@ -183,22 +183,16 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         if path is not None:
             item["Path"] = path
 
-        if length is not None:
-            item["Length"] = length
-
-        if min_shape is not None:
-            item["Minimum ndim"] = len(min_shape)
-
-        if max_shape is not None:
-            item["Maximum ndim"] = len(max_shape)
+        if axis is not None:
+            item["Axis"] = axis
 
         if sample_rate is not None:
             item["Sample Rate"] = float(sample_rate)
 
         self.set_entry_dict(index, item, map_)
 
-        self.join_min_shape(shape=min_shape)
-        self.join_max_shape(shape=max_shape)
+        self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.mins_name)
+        self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.maxs_name)
 
         if id_ is not None:
             self.id_axis.components["axis"].insert_id(id_, index=index)
@@ -216,7 +210,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        length: int = 0,
+        axis: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
@@ -229,24 +223,33 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             end: The end time of the entry.
             sample_rate: The sample rate of the entry.
             map_: The map to the object that should be stored in the entry.
-            length: The number of samples in the entry.
+            axis: The axis dimension number which the data concatiated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
+        self.region_references.get_object(ref_name=self.mins_name).append_data(min_shape)
+        _, min_ref = self.region_references.generate_region_reference(
+            (index, slice(None)),
+            ref_name=self.mins_name,
+        )
+        self.region_references.get_object(ref_name=self.maxs_name).append_data(max_shape)
+        _, max_ref = self.region_references.generate_region_reference(
+            (index, slice(None)),
+            ref_name=self.maxs_name,
+        )
+
         self.append_entry_dict(
             item={
                 "Path": path,
-                "Length": length,
-                "Minimum ndim": len(min_shape),
-                "Maximum ndim": len(max_shape),
+                "Axis": axis,
+                "Minimum Shape": min_ref,
+                "Maximum Shape": max_ref,
                 "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
             },
             map_=map_,
         )
         self.id_axis.components["axis"].append_id(id_ if id_ is not None else uuid.uuid4())
-        self.join_min_shape(shape=min_shape)
-        self.join_max_shape(shape=max_shape)
         self.start_axis.append_data(nanostamp(start))
         self.end_axis.append_data(nanostamp(end if end is not None else start))
 
@@ -258,7 +261,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        length: int = 0,
+        axis: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
@@ -272,25 +275,36 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             end: The end time of the entry.
             sample_rate: The sample rate of the entry.
             map_: The map to the object that should be stored in the entry.
-            length: The number of samples in the entry.
+            axis: The axis dimension number which the data concatiated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
+        self.region_references.get_object(ref_name=self.mins_name).insert_data(index, min_shape)
+        min_object, min_ref = self.region_references.generate_region_reference(
+            (index, slice(None)),
+            ref_name=self.mins_name,
+        )
+        self.region_references.get_object(ref_name=self.maxs_name).insert_data(index, max_shape)
+        max_object, max_ref = self.region_references.generate_region_reference(
+            (index, slice(None)),
+            ref_name=self.maxs_name,
+        )
+
         self.insert_entry_dict(
             index=index,
             item={
                 "Path": path,
-                "Length": length,
-                "Minimum ndim": len(min_shape),
-                "Maximum ndim": len(max_shape),
+                "axis": axis,
+                "Minimum Shape": min_ref,
+                "Maximum Shape": max_ref,
+                "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
                 "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
             },
             map_=map_,
         )
+        self.fix_shape_references()
         self.id_axis.components["axis"].append_id(id_ if id_ is not None else uuid.uuid4())
-        self.join_min_shape(shape=min_shape)
-        self.join_max_shape(shape=max_shape)
         self.start_axis.append_data(nanostamp(start))
         self.end_axis.append_data(nanostamp(end if end is not None else start))
 
@@ -301,7 +315,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         start: datetime | float | int | np.dtype,
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
-        length: int = 0,
+        axis: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
@@ -314,7 +328,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             start: The start time of the entry.
             end: The end time of the entry.
             sample_rate: The sample rate of the entry.
-            length: The number of samples in the entry.
+            axis: The axis dimension number which the data concatiated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
@@ -325,7 +339,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
                 map_=map_,
                 start=start,
                 end=end,
-                length=length,
+                axis=axis,
                 min_shape=min_shape,
                 max_shape=max_shape,
                 sample_rate=sample_rate,
@@ -341,7 +355,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
                     map_=map_,
                     start=start,
                     end=end,
-                    length=length,
+                    axis=axis,
                     min_shape=min_shape,
                     max_shape=max_shape,
                     sample_rate=sample_rate,
@@ -361,7 +375,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             index=index,
             start=child.get_start_datetime(),
             end=child.get_end_datetime(),
-            length=child.length,
+            axis=child.axis,
             min_shape=child.min_shape,
             max_shape=child.max_shape,
             sample_rate=child.sample_rate,
@@ -377,15 +391,25 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             child = self.composite.file[child_ref]
             min_shape = child.min_shape
             max_shape = child.max_shape
+
+            self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.mins_name)
+            _, min_ref = self.region_references.generate_region_reference(
+                (i, slice(len(min_shape))),
+                ref_name=self.mins_name,
+            )
+            self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.maxs_name)
+            _, max_ref = self.region_references.generate_region_reference(
+                (i, slice(len(max_shape))),
+                ref_name=self.maxs_name,
+            )
+
             new = {
-                "Length": child.length,
-                "Minimum ndim": len(min_shape),
-                "Maximum ndim": len(max_shape),
+                "Axis": child.axis,
+                "Minimum Shape": min_ref,
+                "Maximum Shape": max_ref,
                 "Sample Rate": child.sample_rate,
             }
             data[i] = self.composite.item_to_dict(self.composite.item_to_dict(data[i]) | new)
-            self.join_min_shape(shape=min_shape)
-            self.join_max_shape(shape=max_shape)
             starts[i] = nanostamp(child.get_start_datetime())
             ends[i] = nanostamp(child.get_end_datetime())
 

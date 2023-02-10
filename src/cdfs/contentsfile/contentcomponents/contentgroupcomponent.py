@@ -68,17 +68,17 @@ class ContentGroupComponent(NodeGroupComponent):
     @property
     def length(self) -> int:
         """The minimum shape of this node."""
-        return self.map_dataset.get_field("Length").sum()
+        return self.node_map.get_field("Length").sum()
 
     @property
     def min_shape(self) -> tuple[int] | None:
         """The minimum shape of this node."""
-        return self.map_dataset.attributes.get("min_shape", None)
+        return self.node_map.attributes.get("min_shape", None)
 
     @property
     def max_shape(self) -> tuple[int] | None:
         """The maximum shape of this node."""
-        return self.map_dataset.attributes.get("max_shape", None)
+        return self.node_map.attributes.get("max_shape", None)
 
     @property
     def insert_recursive_entry(self) -> AnyCallable:
@@ -138,7 +138,7 @@ class ContentGroupComponent(NodeGroupComponent):
             map_ = self.child_map_type(name=f"{self.composite.name}/{path}")
             self.composite.map.set_item(map_)
 
-        self.map_dataset.components[self.node_component_name].insert_entry(
+        self.node_map.components[self.node_component_name].insert_entry(
             index=index,
             path=path,
             map_=map_,
@@ -201,7 +201,7 @@ class ContentGroupComponent(NodeGroupComponent):
                 ids=ids,
             )
 
-            self.map_dataset.components[self.node_component_name].set_entry(
+            self.node_map.components[self.node_component_name].set_entry(
                 index=index,
                 length=child.length,
                 min_shape=child.min_shape,

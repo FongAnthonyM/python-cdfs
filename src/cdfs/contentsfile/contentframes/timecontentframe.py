@@ -160,7 +160,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
-        for frame_info in self.content_map.components["tree_node"].map_dataset.get_item_dicts_iter():
+        for frame_info in self.content_map.components["tree_node"].node_map.get_item_dicts_iter():
             path = self.path / frame_info["Path"]
             self.frame_paths.add(path)
             self.frames.append(self.frame_type(
@@ -177,7 +177,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
-        for frame_info in self.content_map.components["tree_node"].map_dataset.get_item_dicts_iter():
+        for frame_info in self.content_map.components["tree_node"].node_map.get_item_dicts_iter():
             path = self.path / frame_info["Path"]
             group = self.content_map.file[frame_info["Node"]]
             self.frame_paths.add(path)

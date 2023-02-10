@@ -21,6 +21,7 @@ import uuid
 # Third-Party Packages #
 from dspobjects.time import nanostamp
 from hdf5objects import HDF5Map, HDF5Dataset
+from hdf5objects.dataset import ObjectReferenceComponent, RegionReferenceComponent
 from hdf5objects.treehierarchy import NodeDatasetComponent
 import numpy as np
 
@@ -47,8 +48,13 @@ class ContentDatasetComponent(NodeDatasetComponent):
         id_name: The name of the ID axis.
         **kwargs: Keyword arguments for inheritance.
     """
-    default_i_axis = 0
-    default_id_name = "id_axis"
+    default_i_axis: int = 0
+    default_id_name: str = "id_axis"
+    default_object_refernces_name: str = "object_reference"
+    default_node_name: str = "node"
+    default_region_refernces_name: str = "object_reference"
+    default_mins_name: str = "min_shapes"
+    default_maxs_name: str = "max_shapes"
 
     # Magic Methods #
     # Constructors/Destructors
@@ -57,6 +63,11 @@ class ContentDatasetComponent(NodeDatasetComponent):
         composite: Any = None,
         i_axis: int | None = None,
         id_name: str | None = None,
+        object_ref_name: str | None = None,
+        node_name: str | None = None,
+        region_ref_name: str | None = None,
+        mins_name: str | None = None,
+        maxs_name: str | None = None,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -64,6 +75,15 @@ class ContentDatasetComponent(NodeDatasetComponent):
         self.i_axis: int = self.default_i_axis
         self.id_name: str = self.default_id_name
         self._id_axis: HDF5Dataset | None = None
+
+        self.object_references_name: str = self.default_object_references_name
+        self._object_refernces: ObjectReferenceComponent | None = None
+        self.node_name: str = self.default_node_name
+
+        self.region_references_name: str = self.default_region_references_name
+        self._region_references: RegionReferenceComponent | None = None
+        self.mins_name: str = self.default_mins_name
+        self.maxs_name: str = self.default_maxs_name
 
         # Parent Attributes #
         super().__init__(self, init=False)
@@ -74,6 +94,11 @@ class ContentDatasetComponent(NodeDatasetComponent):
                 composite=composite,
                 i_axis = i_axis,
                 id_name = id_name,
+                object_ref_name=object_ref_name,
+                node_name=node_name,
+                region_ref_name=region_ref_name,
+                mins_name=mins_name,
+                maxs_name=maxs_name,
                 **kwargs,
             )
 
@@ -88,6 +113,29 @@ class ContentDatasetComponent(NodeDatasetComponent):
     def id_axis(self, value: HDF5Dataset | None) -> None:
         self._id_axis = value
 
+    @property
+    def object_references(self) -> OjectReferenceComponent | None:
+        """Loads and returns the id axis."""
+        if self._object_references is None:
+            self._object_references = self.composite.components[self.object_references_name]
+        return self._object_references
+
+    @object_references.setter
+    def object_references(self, value: ObjectReferenceComponent | None) -> None:
+        self._object_references = value
+
+    @property
+    def region_references(self) -> RegionReferenceComponent | None:
+        """Loads and returns the id axis."""
+        if self._region_references is None:
+            self._region_references = self.composite.components[self.region_references_name]
+        return self._region_references
+
+    @region_references.setter
+    def region_references(self, value: RegionReferenceComponent | None) -> None:
+        self._region_references = value
+
+
     # Instance Methods #
     # Constructors/Destructors
     def construct(
@@ -95,6 +143,11 @@ class ContentDatasetComponent(NodeDatasetComponent):
         composite: Any = None,
         i_axis: int | None = None,
         id_name: str | None = None,
+        object_ref_name: str | None = None,
+        node_name: str | None = None,
+        region_ref_name: str | None = None,
+        mins_name: str | None = None,
+        maxs_name: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
@@ -111,43 +164,27 @@ class ContentDatasetComponent(NodeDatasetComponent):
         if id_name is not None:
             self.id_name = id_name
 
+        if object_ref is not None:
+            self.object_ref = object_ref
+
+        if node_name is not None:
+            self.node_name = node_name
+
+        if region_ref_name is not None:
+            self.region_ref_name = region_ref_name
+
+        if mins_name is not None:
+            self.mins_name = mins_name
+
+        if maxs_name is not None:
+            self.maxs_name = maxs_name
+
         super().construct(composite=composite, **kwargs)
-        
-    def join_min_shape(self, shape: tuple[int]) -> None:
-        """Set the minimum shape to the joint minimum of the current minimum and the given shape.
-        
-        Args:
-            shape: The new shape to join with.
-        """
-        old_min = self.composite.attributes.get("min_shape", shape)
-        min_ndim = min(len(old_min), len(shape))
-        if min_ndim == 0:
-            true_min = np.array([])
-        else:
-            mins = np.zeros((2, min_ndim))
-            mins[0, :min_ndim] = old_min
-            mins[1, :min_ndim] = shape
-            true_min = mins.min(0)
-        self.composite.attributes["min_shape"] = true_min.astype(np.uint64)
 
-    def join_max_shape(self, shape: tuple[int]) -> None:
-        """Set the maximum shape to the joint maximum of the current maximum and the given shape.
-
-        Args:
-            shape: The new shape to join with.
-        """
-        old_max = self.composite.attributes.get("max_shape", ())
-        old_ndim = len(old_max)
-        new_ndim = len(shape)
-        max_ndim = max(old_ndim, new_ndim)
-        if max_ndim == 0:
-            true_max = np.array([])
-        else:
-            maxs = np.zeros((2, max_ndim))
-            maxs[0, :old_ndim] = old_max
-            maxs[1, :new_ndim] = shape
-            true_max = maxs.max(0)
-        self.composite.attributes["max_shape"] = true_max.astype(np.uint64)
+    def fix_shape_references(self):
+        for index in range(self.composite.shape[0]):
+            self.region_references.set_region_reference(index, region=(index, slice(None)), ref_name=self.mins_name)
+            self.region_references.set_region_reference(index, region=(index, slice(None)), ref_name=self.maxs_name)
 
     # Node
     def set_entry(
@@ -155,7 +192,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         index: int,
         path: str | None = None,
         map_: HDF5Map | None = None,
-        length: int | None = None,
+        axis: int | None = None,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
@@ -166,7 +203,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
             index: The index to set the given entry.
             path: The path name which the entry represents.
             map_: The map to the object that should be stored in the entry.
-            length: The number of samples in the entry.
+            axis: The axis dimension number which the data concatiated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
@@ -176,19 +213,13 @@ class ContentDatasetComponent(NodeDatasetComponent):
         if path is not None:
             item["Path"] = path
 
-        if length is not None:
-            item["Length"] = length
-
-        if min_shape is not None:
-            item["Minimum ndim"] = len(min_shape)
-
-        if max_shape is not None:
-            item["Maximum ndim"] = len(max_shape)
+        if axis is not None:
+            item["Axis"] = axis
 
         self.set_entry_dict(index, item, map_)
 
-        self.join_min_shape(shape=min_shape)
-        self.join_max_shape(shape=max_shape)
+        self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.mins_name)
+        self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.maxs_name)
 
         if id_ is not None:
             self.id_axis.components["axis"].insert_id(id_, index=index)
@@ -197,7 +228,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         self,
         path: str,
         map_: HDF5Map | None = None,
-        length: int = 0,
+        axis: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
@@ -207,13 +238,25 @@ class ContentDatasetComponent(NodeDatasetComponent):
         Args:
             path: The path name which the entry represents.
             map_: The map to the object that should be stored in the entry.
-            length: The number of samples in the entry.
+            axis: The axis dimension number which the data concatiated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
+        self.region_references.get_object(ref_name=self.mins_name).append_data(min_shape)
+        _, min_ref = self.region_references.generate_region_reference(
+            (index, slice(None)),
+            ref_name=self.mins_name,
+        )
+        self.region_references.get_object(ref_name=self.maxs_name).append_data(max_shape)
+        _, max_ref = self.region_references.generate_region_reference(
+            (index, slice(None)),
+            ref_name=self.maxs_name,
+        )
+
         self.append_entry_dict(
             item={
+                "Node": child,
                 "Path": path,
                 "Length": length,
                 "Minimum ndim": len(min_shape),
@@ -249,6 +292,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         self.insert_entry_dict(
             index=index,
             item={
+                "Node": child,
                 "Path": path,
                 "Length": length,
                 "Minimum ndim": len(min_shape),

@@ -17,7 +17,8 @@ __email__ = __email__
 # Third-Party Packages #
 import h5py
 from hdf5objects import DatasetMap
-from hdf5objects.dataset import SampleAxisMap, IDAxisMap, ObjectReferenceComponent
+from hdf5objects.dataset import RegionReferenceAxisMap, IDAxisMap, ShapesMap
+from hdf5objects.dataset import ObjectReferenceComponent, RegionReferenceComponent, RegionReferenceAxisComponent
 from hdf5objects.treehierarchy import BaseNodeDatasetMap, BaseNodeGroupMap
 import numpy as np
 
@@ -27,34 +28,52 @@ from ..contentcomponents import ContentDatasetComponent, ContentGroupComponent
 
 # Definitions #
 # Classes #
+class ContentShapesDatasetMap(ShapesMap):
+    default_axis_maps = [{
+        "region_axis": RegionReferenceAxisMap(),
+    }]
+
+
+
 class ContentDatasetMap(BaseNodeDatasetMap):
     """A map for a dataset that outlines sequential data across multiple files."""
-    default_attribute_names = {"max_shape": "max_shape", "min_shape": "min_shape"}
+    default_attribute_names = {"min_shapes_dataset": "min_shapes_dataset", "max_shapes_dataset": "max_shapes_dataset"}
     default_dtype = (
         ("Node", h5py.ref_dtype),
         ("Path", str),
-        ("Length", np.uint64),
-        ("Minimum ndim", np.uint64),
-        ("Maximum ndim", np.uint64),
+        ("Axis", np.uint64),
+        ("Minimum Shape", h5py.ref_dtype),
+        ("Maximum Shape", h5py.ref_dtype),
     )
     default_axis_maps = [{
         "id_axis": IDAxisMap(component_kwargs = {"axis": {"is_uuid": True}}),
     }]
     default_component_types = {
-        "object_reference": (ObjectReferenceComponent, {"reference_fields": {"node": "Node"},
-                                                        "primary_reference_field": "node",
-                                                        }),
+        "object_reference": (ObjectReferenceComponent, {
+            "reference_fields": {"node": "Node"},
+            "primary_reference_field": "node",
+        }),
+        "region_reference": (RegionReferenceComponent, {
+            "single_reference_fields": {
+                "min_shapes": ("min_shapes_dataset", "Minimum Shape"),
+                "max_shapes": ("max_shapes_dataset", "Maximum Shape"),
+            },
+        }),
         "tree_node": (ContentDatasetComponent, {}),
     }
-    default_kwargs = {"shape": (0,), "maxshape": (None,)}
+    default_kwargs = {"shape": (0, 1), "maxshape": (None, 1)}
 
 
 class ContentGroupMap(BaseNodeGroupMap):
     """A group map which outlines a group with basic node methods."""
     default_attribute_names = {"tree_type": "tree_type"}
     default_attributes = {"tree_type": "Node"}
-    default_map_names = {"map_dataset": "map_dataset"}
-    default_maps = {"map_dataset": ContentDatasetMap()}
+    default_map_names = {"node_map": "node_map", "min_shapes": "min_shapes", "max_shapes": "max_shapes"}
+    default_maps = {
+        "node_map": ContentDatasetMap(),
+        "min_shapes": ContentShapesDatasetMap(),
+        "max_shapes": ContentShapesDatasetMap(),
+    }
     default_component_types = {
         "tree_node": (ContentGroupComponent, {}),
     }
