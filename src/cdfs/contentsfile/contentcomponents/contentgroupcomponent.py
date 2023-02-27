@@ -65,20 +65,21 @@ class ContentGroupComponent(NodeGroupComponent):
                 insert_name=insert_name,
                 **kwargs,
             )
+
     @property
     def length(self) -> int:
         """The minimum shape of this node."""
-        return self.node_map.get_field("Length").sum()
+        return  self.node_map.components[self.node_component_name].get_length()
 
     @property
     def min_shape(self) -> tuple[int] | None:
         """The minimum shape of this node."""
-        return self.node_map.attributes.get("min_shape", None)
+        return self.node_map.components[self.node_component_name].get_min_shape()
 
     @property
     def max_shape(self) -> tuple[int] | None:
         """The maximum shape of this node."""
-        return self.node_map.attributes.get("max_shape", None)
+        return self.node_map.components[self.node_component_name].get_max_shape()
 
     @property
     def insert_recursive_entry(self) -> AnyCallable:
@@ -105,6 +106,24 @@ class ContentGroupComponent(NodeGroupComponent):
 
         super().construct(composite=composite, **kwargs)
 
+    def require_component(self, **kwargs: Any) -> None:
+        """Creates all the required parts of the group for this component if it does not exists.
+
+        Args:
+            **kwargs: The keyword arguments to require this component.
+        """
+        self.node_map.components[self.node_component_name].set_min_shapes_dataset(self.composite["min_shapes"])
+        self.node_map.components[self.node_component_name].set_max_shapes_dataset(self.composite["max_shapes"])
+
+    def get_lengths(self) -> tuple[int, ...]:
+        return self.node_map.components[self.node_component_name].get_lengths()
+
+    def get_min_shape(self) -> tuple[int, ...]:
+        return self.node_map.components[self.node_component_name].get_min_shape()
+
+    def get_max_shape(self) -> tuple[int, ...]:
+        return self.node_map.components[self.node_component_name].get_max_shape()
+
     def set_insert_recursive_entry_method(self, name: str) -> None:
         """Sets insert recursive entry method to a method within this object.
 
@@ -118,7 +137,6 @@ class ContentGroupComponent(NodeGroupComponent):
         index: int,
         path: str,
         map_: HDF5Map | None = None,
-        length: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
@@ -142,7 +160,6 @@ class ContentGroupComponent(NodeGroupComponent):
             index=index,
             path=path,
             map_=map_,
-            length=length,
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
@@ -154,7 +171,6 @@ class ContentGroupComponent(NodeGroupComponent):
         self,
         indicies: Iterable[int],
         paths: Iterable[str],
-        length: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         ids: Iterable[str | uuid.UUID | None] | None = None,
@@ -186,7 +202,6 @@ class ContentGroupComponent(NodeGroupComponent):
             index=index,
             path=path,
             map_=map_,
-            length=length,
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
@@ -195,7 +210,6 @@ class ContentGroupComponent(NodeGroupComponent):
             child.components[self.node_component_name].insert_recursive_entry(
                 paths=paths,
                 map_=map_,
-                length=length,
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
@@ -203,7 +217,6 @@ class ContentGroupComponent(NodeGroupComponent):
 
             self.node_map.components[self.node_component_name].set_entry(
                 index=index,
-                length=child.length,
                 min_shape=child.min_shape,
                 max_shape=child.max_shape,
             )

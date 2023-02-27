@@ -46,3 +46,6 @@ class ContentsFile(BaseHDF5):
     @property
     def contents_root_node(self) -> ContentGroupComponent:
         return self.components["contents"].get_root_node_component()
+
+    def build_swmr(self, **kwargs) -> None:
+        pass

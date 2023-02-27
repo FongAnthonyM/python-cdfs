@@ -16,12 +16,12 @@ __email__ = __email__
 
 # Third-Party Packages #
 from hdf5objects.dataset import SampleAxisMap, TimeAxisMap, IDAxisMap
-from hdf5objects.dataset import ObjectReferenceComponent, TimeSeriesComponent
+from hdf5objects.dataset import ObjectReferenceComponent, RegionReferenceComponent, TimeSeriesComponent
 import numpy as np
 
 # Local Packages #
 from ..contentcomponents import TimeContentDatasetComponent, TimeContentGroupComponent
-from .contentmaps import ContentDatasetMap, ContentGroupMap
+from .contentmaps import ContentShapesDatasetMap, ContentDatasetMap, ContentGroupMap
 
 
 # Definitions #
@@ -61,7 +61,6 @@ class TimeContentGroupMap(ContentGroupMap):
         "min_shapes": ContentShapesDatasetMap(),
         "max_shapes": ContentShapesDatasetMap(),
     }
-
     default_component_types = {
         "tree_node": (TimeContentGroupComponent, {}),
     }

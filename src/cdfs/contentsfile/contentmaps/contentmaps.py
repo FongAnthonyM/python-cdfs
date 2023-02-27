@@ -42,8 +42,8 @@ class ContentDatasetMap(BaseNodeDatasetMap):
         ("Node", h5py.ref_dtype),
         ("Path", str),
         ("Axis", np.uint64),
-        ("Minimum Shape", h5py.ref_dtype),
-        ("Maximum Shape", h5py.ref_dtype),
+        ("Minimum Shape", h5py.regionref_dtype),
+        ("Maximum Shape", h5py.regionref_dtype),
     )
     default_axis_maps = [{
         "id_axis": IDAxisMap(component_kwargs = {"axis": {"is_uuid": True}}),
@@ -61,7 +61,7 @@ class ContentDatasetMap(BaseNodeDatasetMap):
         }),
         "tree_node": (ContentDatasetComponent, {}),
     }
-    default_kwargs = {"shape": (0, 1), "maxshape": (None, 1)}
+    default_kwargs = {"shape": (0,), "maxshape": (None,)}
 
 
 class ContentGroupMap(BaseNodeGroupMap):

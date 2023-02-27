@@ -228,14 +228,14 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
-        self.region_references.get_object(ref_name=self.mins_name).append_data(min_shape)
+        self.min_shapes.append_data(np.array((min_shape,)))
         _, min_ref = self.region_references.generate_region_reference(
-            (index, slice(None)),
+            (-1, slice(None)),
             ref_name=self.mins_name,
         )
-        self.region_references.get_object(ref_name=self.maxs_name).append_data(max_shape)
+        self.max_shapes.append_data(np.array((max_shape,)))
         _, max_ref = self.region_references.generate_region_reference(
-            (index, slice(None)),
+            (-1, slice(None)),
             ref_name=self.maxs_name,
         )
 
@@ -280,33 +280,46 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
-        self.region_references.get_object(ref_name=self.mins_name).insert_data(index, min_shape)
-        min_object, min_ref = self.region_references.generate_region_reference(
-            (index, slice(None)),
-            ref_name=self.mins_name,
-        )
-        self.region_references.get_object(ref_name=self.maxs_name).insert_data(index, max_shape)
-        max_object, max_ref = self.region_references.generate_region_reference(
-            (index, slice(None)),
-            ref_name=self.maxs_name,
-        )
+        if self.composite.size == 0:
+            self.append_entry(
+                path=path,
+                map_=map_,
+                start=start,
+                end=end,
+                axis=axis,
+                min_shape=min_shape,
+                max_shape=max_shape,
+                sample_rate=sample_rate,
+                id_=id_,
+            )
+        else:
+            self.min_shapes.insert_data(index, np.array((min_shape,)))
+            min_object, min_ref = self.region_references.generate_region_reference(
+                (index, slice(None)),
+                ref_name=self.mins_name,
+            )
+            self.max_shapes.insert_data(index, np.array((max_shape,)))
+            max_object, max_ref = self.region_references.generate_region_reference(
+                (index, slice(None)),
+                ref_name=self.maxs_name,
+            )
 
-        self.insert_entry_dict(
-            index=index,
-            item={
-                "Path": path,
-                "axis": axis,
-                "Minimum Shape": min_ref,
-                "Maximum Shape": max_ref,
-                "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
-                "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
-            },
-            map_=map_,
-        )
-        self.fix_shape_references()
-        self.id_axis.components["axis"].append_id(id_ if id_ is not None else uuid.uuid4())
-        self.start_axis.append_data(nanostamp(start))
-        self.end_axis.append_data(nanostamp(end if end is not None else start))
+            self.insert_entry_dict(
+                index=index,
+                item={
+                    "Path": path,
+                    "Axis": axis,
+                    "Minimum Shape": min_ref,
+                    "Maximum Shape": max_ref,
+                    "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
+                    "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
+                },
+                map_=map_,
+            )
+            self.fix_shape_references()
+            self.id_axis.components["axis"].insert_id(index=index, id_=id_ if id_ is not None else uuid.uuid4())
+            self.start_axis.insert_data(index, nanostamp(start))
+            self.end_axis.insert_data(index, nanostamp(end if end is not None else start))
 
     def insert_entry_start(
         self,

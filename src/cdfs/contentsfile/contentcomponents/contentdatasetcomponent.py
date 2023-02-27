@@ -50,9 +50,9 @@ class ContentDatasetComponent(NodeDatasetComponent):
     """
     default_i_axis: int = 0
     default_id_name: str = "id_axis"
-    default_object_refernces_name: str = "object_reference"
+    default_object_references_name: str = "object_reference"
     default_node_name: str = "node"
-    default_region_refernces_name: str = "object_reference"
+    default_region_references_name: str = "region_reference"
     default_mins_name: str = "min_shapes"
     default_maxs_name: str = "max_shapes"
 
@@ -114,7 +114,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         self._id_axis = value
 
     @property
-    def object_references(self) -> OjectReferenceComponent | None:
+    def object_references(self) -> ObjectReferenceComponent | None:
         """Loads and returns the id axis."""
         if self._object_references is None:
             self._object_references = self.composite.components[self.object_references_name]
@@ -135,6 +135,13 @@ class ContentDatasetComponent(NodeDatasetComponent):
     def region_references(self, value: RegionReferenceComponent | None) -> None:
         self._region_references = value
 
+    @property
+    def min_shapes(self) -> HDF5Dataset:
+        return self.region_references.get_object(ref_name=self.mins_name)
+
+    @property
+    def max_shapes(self) -> HDF5Dataset:
+        return self.region_references.get_object(ref_name=self.maxs_name)
 
     # Instance Methods #
     # Constructors/Destructors
@@ -164,14 +171,14 @@ class ContentDatasetComponent(NodeDatasetComponent):
         if id_name is not None:
             self.id_name = id_name
 
-        if object_ref is not None:
-            self.object_ref = object_ref
+        if object_ref_name is not None:
+            self.object_references_name = object_ref_name
 
         if node_name is not None:
             self.node_name = node_name
 
         if region_ref_name is not None:
-            self.region_ref_name = region_ref_name
+            self.region_references_name = region_ref_name
 
         if mins_name is not None:
             self.mins_name = mins_name
@@ -180,6 +187,28 @@ class ContentDatasetComponent(NodeDatasetComponent):
             self.maxs_name = maxs_name
 
         super().construct(composite=composite, **kwargs)
+
+    def set_min_shapes_dataset(self, object_: HDF5Dataset | h5py.Dataset | h5py.Reference | None) -> None:
+        self.region_references.set_object_reference(object_=object_, ref_name=self.mins_name)
+
+    def set_max_shapes_dataset(self, object_: HDF5Dataset | h5py.Dataset | h5py.Reference | None) -> None:
+        self.region_references.set_object_reference(object_=object_, ref_name=self.maxs_name)
+
+    def get_lengths(self) -> tuple[int, ...]:
+        return tuple(self.min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]))
+    
+    def get_length(self) -> int:
+        return sum(self.get_lengths())
+    
+    def get_min_shape(self) -> tuple[int, ...]:
+        min_shape = list(self.min_shapes.components["shapes"].get_min_shape())
+        min_shape[0] = self.get_length()
+        return tuple(min_shape)
+
+    def get_max_shape(self) -> tuple[int, ...]:
+        max_shape = list(self.max_shapes.components["shapes"].get_max_shape())
+        max_shape[0] = self.get_length()
+        return tuple(max_shape)
 
     def fix_shape_references(self):
         for index in range(self.composite.shape[0]):
@@ -243,12 +272,12 @@ class ContentDatasetComponent(NodeDatasetComponent):
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
-        self.region_references.get_object(ref_name=self.mins_name).append_data(min_shape)
+        self.min_shapes.append_data(min_shape)
         _, min_ref = self.region_references.generate_region_reference(
             (index, slice(None)),
             ref_name=self.mins_name,
         )
-        self.region_references.get_object(ref_name=self.maxs_name).append_data(max_shape)
+        self.max_shapes.append_data(max_shape)
         _, max_ref = self.region_references.generate_region_reference(
             (index, slice(None)),
             ref_name=self.maxs_name,
@@ -258,7 +287,6 @@ class ContentDatasetComponent(NodeDatasetComponent):
             item={
                 "Node": child,
                 "Path": path,
-                "Length": length,
                 "Minimum ndim": len(min_shape),
                 "Maximum ndim": len(max_shape),
             },
@@ -294,7 +322,6 @@ class ContentDatasetComponent(NodeDatasetComponent):
             item={
                 "Node": child,
                 "Path": path,
-                "Length": length,
                 "Minimum ndim": len(min_shape),
                 "Maximum ndim": len(max_shape),
             },
