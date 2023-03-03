@@ -21,7 +21,6 @@ import uuid
 # Third-Party Packages #
 from dspobjects.time import nanostamp
 from hdf5objects import HDF5Map, HDF5Dataset
-from hdf5objects.dataset import BaseDatasetComponent
 import numpy as np
 
 # Local Packages #
@@ -35,7 +34,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
 
     Class Attributes:
         default_i_axis: The default dimension which the ID axis is on.
-        defaulte_id_name: The default name of the ID axis.
+        default_id_name: The default name of the ID axis.
 
     Attributes:
         s_axis: The dimension which the start axis is on.
@@ -163,6 +162,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Set an entry's values based on the given parameters.
 
@@ -173,7 +173,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             end: The end time of the entry.
             sample_rate: The sample rate of the entry.
             map_: The map to the object that should be stored in the entry.
-            axis: The axis dimension number which the data concatiated along.
+            axis: The axis dimension number which the data concatenated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
@@ -214,6 +214,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Append an entry to dataset.
 
@@ -265,6 +266,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Insert an entry into dataset.
 
@@ -275,12 +277,12 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             end: The end time of the entry.
             sample_rate: The sample rate of the entry.
             map_: The map to the object that should be stored in the entry.
-            axis: The axis dimension number which the data concatiated along.
+            axis: The axis dimension number which the data concatenated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
-        if self.composite.size == 0:
+        if self.composite.size == 0 or index == len(self.composite):
             self.append_entry(
                 path=path,
                 map_=map_,
@@ -312,7 +314,6 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
                     "Minimum Shape": min_ref,
                     "Maximum Shape": max_ref,
                     "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
-                    "Sample Rate": float(sample_rate) if sample_rate is not None else np.nan,
                 },
                 map_=map_,
             )
@@ -332,6 +333,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Inserts an entry into dataset based on the start time.
 
@@ -341,13 +343,13 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             start: The start time of the entry.
             end: The end time of the entry.
             sample_rate: The sample rate of the entry.
-            axis: The axis dimension number which the data concatiated along.
+            axis: The axis dimension number which the data concatenated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
         if self.composite.size == 0:
-            self.append_node_entry(
+            self.append_entry(
                 path=path,
                 map_=map_,
                 start=start,
@@ -396,7 +398,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
 
     def update_entries(self) -> None:
         """Updates all entries to the correct information of their child."""
-        child_refs = self.composite.get_field(reference_field)
+        child_refs = self.composite.get_field(self.reference_field)
         data = self.composite[...]
         starts = self.start_axis[...]
         ends = self.end_axis[...]
@@ -405,12 +407,12 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             min_shape = child.min_shape
             max_shape = child.max_shape
 
-            self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.mins_name)
+            self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.mins_name)
             _, min_ref = self.region_references.generate_region_reference(
                 (i, slice(len(min_shape))),
                 ref_name=self.mins_name,
             )
-            self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.maxs_name)
+            self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.maxs_name)
             _, max_ref = self.region_references.generate_region_reference(
                 (i, slice(len(max_shape))),
                 ref_name=self.maxs_name,

@@ -34,7 +34,6 @@ class ContentShapesDatasetMap(ShapesMap):
     }]
 
 
-
 class ContentDatasetMap(BaseNodeDatasetMap):
     """A map for a dataset that outlines sequential data across multiple files."""
     default_attribute_names = {"min_shapes_dataset": "min_shapes_dataset", "max_shapes_dataset": "max_shapes_dataset"}
@@ -46,7 +45,7 @@ class ContentDatasetMap(BaseNodeDatasetMap):
         ("Maximum Shape", h5py.regionref_dtype),
     )
     default_axis_maps = [{
-        "id_axis": IDAxisMap(component_kwargs = {"axis": {"is_uuid": True}}),
+        "id_axis": IDAxisMap(component_kwargs={"axis": {"is_uuid": True}}),
     }]
     default_component_types = {
         "object_reference": (ObjectReferenceComponent, {

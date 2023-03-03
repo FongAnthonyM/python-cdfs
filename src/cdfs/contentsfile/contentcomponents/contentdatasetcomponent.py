@@ -19,7 +19,6 @@ from typing import Any
 import uuid
 
 # Third-Party Packages #
-from dspobjects.time import nanostamp
 from hdf5objects import HDF5Map, HDF5Dataset
 from hdf5objects.dataset import ObjectReferenceComponent, RegionReferenceComponent
 from hdf5objects.treehierarchy import NodeDatasetComponent
@@ -35,7 +34,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
 
     Class Attributes:
         default_i_axis: The default dimension which the ID axis is on.
-        defaulte_id_name: The default name of the ID axis.
+        default_id_name: The default name of the ID axis.
 
     Attributes:
         i_axis: The dimension which the ID axis is on.
@@ -225,6 +224,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Set an entry's values based on the given parameters.
 
@@ -232,7 +232,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
             index: The index to set the given entry.
             path: The path name which the entry represents.
             map_: The map to the object that should be stored in the entry.
-            axis: The axis dimension number which the data concatiated along.
+            axis: The axis dimension number which the data concatenated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
@@ -261,50 +261,50 @@ class ContentDatasetComponent(NodeDatasetComponent):
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Append an entry to dataset.
 
         Args:
             path: The path name which the entry represents.
             map_: The map to the object that should be stored in the entry.
-            axis: The axis dimension number which the data concatiated along.
+            axis: The axis dimension number which the data concatenated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
-        self.min_shapes.append_data(min_shape)
+        self.min_shapes.append_data(np.array((min_shape,)))
         _, min_ref = self.region_references.generate_region_reference(
-            (index, slice(None)),
+            (-1, slice(None)),
             ref_name=self.mins_name,
         )
-        self.max_shapes.append_data(max_shape)
+        self.max_shapes.append_data(np.array((max_shape,)))
         _, max_ref = self.region_references.generate_region_reference(
-            (index, slice(None)),
+            (-1, slice(None)),
             ref_name=self.maxs_name,
         )
 
         self.append_entry_dict(
             item={
-                "Node": child,
                 "Path": path,
+                "Axis": axis,
                 "Minimum ndim": len(min_shape),
                 "Maximum ndim": len(max_shape),
             },
             map_=map_,
         )
         self.id_axis.components["axis"].append_id(id_ if id_ is not None else uuid.uuid4())
-        self.join_min_shape(shape=min_shape)
-        self.join_max_shape(shape=max_shape)
 
     def insert_entry(
         self,
         index: int,
         path: str,
         map_: HDF5Map | None = None,
-        length: int = 0,
+        axis: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Insert an entry into dataset.
 
@@ -312,24 +312,32 @@ class ContentDatasetComponent(NodeDatasetComponent):
             index: The index to insert the given entry.
             path: The path name which the entry represents.
             map_: The map to the object that should be stored in the entry.
-            length: The number of samples in the entry.
+            axis: The axis dimension number which the data concatenated along.
             min_shape: The minimum shape in the entry.
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
-        self.insert_entry_dict(
-            index=index,
-            item={
-                "Node": child,
-                "Path": path,
-                "Minimum ndim": len(min_shape),
-                "Maximum ndim": len(max_shape),
-            },
-            map_=map_,
-        )
-        self.id_axis.components["axis"].append_id(id_ if id_ is not None else uuid.uuid4())
-        self.join_min_shape(shape=min_shape)
-        self.join_max_shape(shape=max_shape)
+        if self.composite.size == 0 or index == len(self.composite):
+            self.append_entry(
+                path=path,
+                map_=map_,
+                axis=axis,
+                min_shape=min_shape,
+                max_shape=max_shape,
+                id_=id_,
+            )
+        else:
+            self.insert_entry_dict(
+                index=index,
+                item={
+                    "Path": path,
+                    "Axis": axis,
+                    "Minimum ndim": len(min_shape),
+                    "Maximum ndim": len(max_shape),
+                },
+                map_=map_,
+            )
+            self.id_axis.components["axis"].append_id(id_ if id_ is not None else uuid.uuid4())
 
     def update_entry(self, index: int) -> None:
         """Updates an entry to the correct information of the child.
@@ -338,19 +346,33 @@ class ContentDatasetComponent(NodeDatasetComponent):
             index: The index of the entry to update.
         """
         child = self.composite.file[self.composite.dtypes_dict[self.reference_field]]
-        self.set_entry(lengh=child.length, min_shape=child.min_shape, max_shape=child.max_shape)
+        self.set_entry(index=index, axis=child.axis, min_shape=child.min_shape, max_shape=child.max_shape)
 
     def update_entries(self) -> None:
         """Updates all entries to the correct information of their child."""
-        child_refs = self.composite.get_field(reference_field)
+        child_refs = self.composite.get_field(self.reference_field)
         data = self.composite[...]
         for i, child_ref in enumerate(child_refs):
             child = self.composite.file[child_ref]
             min_shape = child.min_shape
             max_shape = child.max_shape
-            new = {"Length": child.length, "Minimum ndim": len(min_shape), "Maximum ndim": len(max_shape)}
+
+            self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.mins_name)
+            _, min_ref = self.region_references.generate_region_reference(
+                (i, slice(len(min_shape))),
+                ref_name=self.mins_name,
+            )
+            self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.maxs_name)
+            _, max_ref = self.region_references.generate_region_reference(
+                (i, slice(len(max_shape))),
+                ref_name=self.maxs_name,
+            )
+
+            new = {
+                "Axis": child.axis,
+                "Minimum Shape": min_ref,
+                "Maximum Shape": max_ref,
+            }
             data[i] = self.composite.item_to_dict(self.composite.item_to_dict(data[i]) | new)
-            self.join_min_shape(shape=min_shape)
-            self.join_max_shape(shape=max_shape)
 
         self.composite.data_exclusively(data)
