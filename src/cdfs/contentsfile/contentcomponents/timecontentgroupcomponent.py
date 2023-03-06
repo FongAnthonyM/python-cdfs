@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from datetime import datetime, date, tzinfo
 from decimal import Decimal
 from typing import Any
@@ -125,6 +125,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
         else:
             return sentinel
 
+    # Child Creation
     def create_child(
         self,
         index: int,
@@ -342,6 +343,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             id_=id_,
         )
 
+    # Entry Appending
     def append_recursive_entry_index(
         self,
         indices: Iterable[int],
@@ -554,6 +556,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 max_shape=child_node_component.max_shape,
             )
 
+    # Entry Inserting
     def insert_recursive_entry_index(
         self,
         indices: Iterable[int],
