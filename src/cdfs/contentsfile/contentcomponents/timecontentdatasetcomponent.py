@@ -149,6 +149,13 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
 
         super().construct(composite=composite, **kwargs)
 
+    def get_end_datetime(self) -> datetime | None:
+        if self.composite.size == 0:
+            return None
+        else:
+            index = len(np.trim_zeros(np.array(self.get_lengths()), 'b')) - 1
+            return self.end_axis.components["axis"].datetimes[index] if index >= 0 else None
+
     # Node
     def set_entry(
         self,
@@ -158,9 +165,9 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
@@ -191,8 +198,11 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
 
         self.set_entry_dict(index, item, map_)
 
-        self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.mins_name)
-        self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.maxs_name)
+        mins_shape = self.region_references.get_object(index=index, ref_name=self.mins_name).components["shapes"]
+        mins_shape.set_shape(index=index, shape=min_shape)
+
+        maxs_shape = self.region_references.get_object(index=index, ref_name=self.maxs_name).components["shapes"]
+        maxs_shape.set_shape(index=index, shape=max_shape)
 
         if id_ is not None:
             self.id_axis.components["axis"].insert_id(id_, index=index)
@@ -211,8 +221,8 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
         axis: int = 0,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
@@ -263,8 +273,8 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
         axis: int = 0,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
@@ -330,8 +340,8 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         axis: int = 0,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:

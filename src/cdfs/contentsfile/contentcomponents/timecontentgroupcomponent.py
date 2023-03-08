@@ -55,7 +55,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
         Returns:
             The end datetime of this node.
         """
-        return self.node_map.components["end_times"].end_datetime if self.node_map.size != 0 else None
+        return self.node_map.components[self.node_component_name].get_end_datetime()
 
     def set_time_zone(self, value: str | tzinfo | None = None, offset: float | None = None) -> None:
         """Sets the timezone of the start and end time axes.
@@ -134,9 +134,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> HDF5Dataset | None:
@@ -194,9 +194,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> HDF5Dataset | None:
@@ -237,9 +237,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> tuple[int, HDF5Dataset | None]:
@@ -289,9 +289,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> tuple[int, HDF5Dataset | None]:
@@ -352,9 +352,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         ids: Iterable[str | uuid.UUID | None] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -427,9 +427,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         ids: Iterable[str | uuid.UUID | None] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -495,9 +495,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         ids: Iterable[str | uuid.UUID | None] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -565,9 +565,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         ids: Iterable[str | uuid.UUID | None] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -639,9 +639,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         ids: Iterable[str | uuid.UUID | None] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -707,9 +707,9 @@ class TimeContentGroupComponent(ContentGroupComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         ids: Iterable[str | uuid.UUID | None] | None = None,
         **kwargs: Any,
     ) -> None:

@@ -13,6 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from abc import abstractmethod
 from collections.abc import Iterable
 import pathlib
 from typing import Any
@@ -59,6 +60,7 @@ class CDFS(BaseComposite):
         # New Attributes #
         self._path: pathlib.Path | None = None
         self.mode: str = 'r'
+        self._swmr_mode: bool = False
 
         self.contents_file_name: str = self.default_content_file_name
         self.contents_file: ContentsFile | None = None
@@ -94,7 +96,15 @@ class CDFS(BaseComposite):
             self._path = value
         else:
             self._path = pathlib.Path(value)
-            
+
+    @property
+    def swmr_mode(self) -> bool:
+        return self._swmr_mode
+
+    @swmr_mode.setter
+    def swme_mode(self, value: bool) -> None:
+        self.set_swmr(value)
+
     @property
     def contents_path(self) -> pathlib.Path:
         return self.path / self.contents_file_name
@@ -179,6 +189,14 @@ class CDFS(BaseComposite):
             self.construct_data()
         else:
             self.contents_file.require(**kwargs)
+
+    @abstractmethod
+    def build_swmr(self, **kwargs):
+        pass
+
+    def set_swmr(self, value: bool) -> None:
+        self.contents_file.swmr_mode = value
+        self._swmr_mode = value
 
     def get_start_datetime(self):
         return self.contents_root_node.get_start_datetime()

@@ -197,16 +197,16 @@ class ContentDatasetComponent(NodeDatasetComponent):
         return tuple(self.min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]))
     
     def get_length(self) -> int:
-        return sum(self.get_lengths())
+        return int(sum(self.get_lengths()))
     
     def get_min_shape(self) -> tuple[int, ...]:
         min_shape = list(self.min_shapes.components["shapes"].get_min_shape())
-        min_shape[0] = self.get_length()
+        min_shape[0] = self.get_length()  # Add a way to select main axis which the data is append along
         return tuple(min_shape)
 
     def get_max_shape(self) -> tuple[int, ...]:
         max_shape = list(self.max_shapes.components["shapes"].get_max_shape())
-        max_shape[0] = self.get_length()
+        max_shape[0] = self.get_length()  # Add a way to select main axis which the data is append along
         return tuple(max_shape)
 
     def fix_shape_references(self):
@@ -220,9 +220,9 @@ class ContentDatasetComponent(NodeDatasetComponent):
         index: int,
         path: str | None = None,
         map_: HDF5Map | None = None,
-        axis: int | None = None,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
@@ -258,8 +258,8 @@ class ContentDatasetComponent(NodeDatasetComponent):
         path: str,
         map_: HDF5Map | None = None,
         axis: int = 0,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
@@ -301,8 +301,8 @@ class ContentDatasetComponent(NodeDatasetComponent):
         path: str,
         map_: HDF5Map | None = None,
         axis: int = 0,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
