@@ -28,7 +28,7 @@ from .contentsfile import ContentsFileMap, ContentsFile
 class TimeContentsFileMap(ContentsFileMap):
     """A map which outlines a content file with time information."""
     default_maps: Mapping[str, HDF5Map] = {
-        "contents": TimeContentDatasetMap(shape=(0,), maxshape=(None,)),
+        "contents": TimeContentDatasetMap(object_kwargs={"shape": (0,), "maxshape": (None,)}),
     }
 
 
