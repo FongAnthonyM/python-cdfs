@@ -102,7 +102,7 @@ class CDFS(BaseComposite):
         return self._swmr_mode
 
     @swmr_mode.setter
-    def swme_mode(self, value: bool) -> None:
+    def swmr_mode(self, value: bool) -> None:
         self.set_swmr(value)
 
     @property

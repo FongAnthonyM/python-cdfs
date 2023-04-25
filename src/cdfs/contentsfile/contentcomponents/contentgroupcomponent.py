@@ -26,11 +26,17 @@ from hdf5objects.treehierarchy import NodeGroupComponent
 
 
 # Definitions #
+# Static #
+SENTINEL = object()
+
+
 # Classes #
 class ContentGroupComponent(NodeGroupComponent):
     """A node component which implements an interface for a content dataset.
 
     Attributes:
+        get_recursive_entry: The method to use as the get recursive entry method.
+        append_recursive_entry: The method to use as the append recursive entry method.
         insert_recursive_entry: The method to use as the insert recursive entry method.
 
     Args:
@@ -39,6 +45,7 @@ class ContentGroupComponent(NodeGroupComponent):
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for inheritance.
     """
+    default_get_recursive: str = "get_recursive_entry_index"
     default_append_recursive: str = "append_recursive_entry_index"
     default_insert_recursive: str = "insert_recursive_entry_index"
 
@@ -53,9 +60,14 @@ class ContentGroupComponent(NodeGroupComponent):
         **kwargs: Any,
     ) -> None:
         # New Attributes #
+        self.get_recursive_entry: MethodMultiplexer = MethodMultiplexer(
+            instance=self,
+            select=self.default_get_recursive,
+        )
+        
         self.append_recursive_entry: MethodMultiplexer = MethodMultiplexer(
             instance=self,
-            select=self.default_insert_recursive,
+            select=self.default_append_recursive,
         )
 
         self.insert_recursive_entry: MethodMultiplexer = MethodMultiplexer(
@@ -68,7 +80,7 @@ class ContentGroupComponent(NodeGroupComponent):
 
         # Object Construction #
         if init:
-            self.construct(composite=composite, append_methodq=append_method, insert_method=insert_method, **kwargs)
+            self.construct(composite=composite, append_method=append_method, insert_method=insert_method, **kwargs)
 
     @property
     def length(self) -> int:
@@ -200,6 +212,45 @@ class ContentGroupComponent(NodeGroupComponent):
                 max_shape=max_shape,
                 id_=id_,
             )
+    
+    # Get Child
+    def get_child(self, index: int, default: Any = SENTINEL) -> Any:
+        """Gets the child group at the given index.
+        
+        Args:
+            index: The index of the child group to get.
+            default: The default item to return if the requested child could not be returned.
+        
+        Return:
+            The requested child group or the default.
+        """
+        try:
+            return self.node_map.components["object_reference"].get_object(index, ref_name="node")
+        except IndexError as e:
+            if default is not SENTINEL:
+                return default
+            else:
+                raise e
+    
+    # Entry Getting
+    def get_recursive_entry_index(self, indices: Iterable, **kwargs: Any) -> Any:
+        """Gets an entry recursively from this object's children using indices.
+        
+        Args:
+            indices: The indices to recursively get the entry from.
+        
+        Return:
+            The requested entry.
+        """
+        if not isinstance(indices, list):
+            indices = list(indices)
+
+        index = indices.pop(0)
+        if indices:
+            return self.get_child(index).get_recursive_entry(indices)
+        else:
+            return self.node_map[index]
+
 
     # Entry Appending
     def append_recursive_entry_index(

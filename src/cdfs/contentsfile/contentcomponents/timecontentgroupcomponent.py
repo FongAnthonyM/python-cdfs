@@ -25,7 +25,7 @@ from hdf5objects import HDF5Map, HDF5Dataset
 import numpy as np
 
 # Local Packages #
-from .contentgroupcomponent import ContentGroupComponent
+from .contentgroupcomponent import ContentGroupComponent, SENTINEL
 
 
 # Definitions #
@@ -342,6 +342,86 @@ class TimeContentGroupComponent(ContentGroupComponent):
             max_shape=max_shape,
             id_=id_,
         )
+
+    # Get Child
+    def get_child_start(
+        self,
+        start: datetime | float | int | np.dtype,
+        approx: bool = False,
+        tails: bool = False,
+        default: Any = SENTINEL,
+    ) -> Any:
+        """Gets the child group at the given time.
+
+        Args:
+            start: The start time of the child to get.
+            approx: Determines if the returned entry must be at the exact time or the nearest time.
+            tails: Determines if the returned entry must be within the time range or if it can be outside.
+            default: The default item to return if the requested child could not be returned.
+
+        Return:
+            The requested child group and its index or the default.
+        """
+        start = nanostamp(start)
+        try:
+            index, dt = self.node_map.components["start_times"].find_time_index(start, approx=approx, tails=tails)
+            return index, self.node_map.components["object_reference"].get_object(index, ref_name="node")
+        except IndexError as e:
+            if default is not SENTINEL:
+                return default
+            else:
+                raise e
+
+    # Entry Getting
+    def get_recursive_entry_starts(
+        self,
+        starts: Iterable,
+        approx: bool = False,
+        tails: bool = False,
+        **kwargs: Any,
+    ) -> Any:
+        """Gets an entry recursively from this object's children using the start datetimes.
+
+        Args:
+            starts: The starts to recursively get the entry from.
+            approx: Determines if the returned entry must be at the exact time or the nearest time.
+            tails: Determines if the returned entry must be within the time range or if it can be outside.
+
+        Return:
+            The requested entry.
+        """
+        if not isinstance(starts, list):
+            starts = list(starts)
+
+        index, child = self.get_child_start(starts.pop(0), approx=approx, tails=tails)
+        if starts:
+            return child.get_recursive_entry(starts, approx=approx, tails=tails)
+        else:
+            return self.node_map[index]
+
+    def get_recursive_entry_start(
+        self,
+        start: datetime | float | int | np.dtype,
+        approx: bool = False,
+        tails: bool = False,
+        **kwargs: Any,
+    ) -> Any:
+        """Gets an entry recursively from this object's children using the start datetime.
+
+        Args:
+            start: The start to recursively get the entry from.
+            approx: Determines if the returned entry must be at the exact time or the nearest time.
+            tails: Determines if the returned entry must be within the time range or if it can be outside.
+
+        Return:
+            The requested entry.
+        """
+        index, child = self.get_child_start(start, approx=True, tails=True)
+        if child is not None:
+            return child.get_recursive_entry_start(start, approx=approx, tails=tails)
+        else:
+            index, child = self.get_child_start(start, approx=approx, tails=tails)
+            return self.node_map[index]
 
     # Entry Appending
     def append_recursive_entry_index(
