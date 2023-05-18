@@ -215,6 +215,13 @@ class ContentDatasetComponent(NodeDatasetComponent):
             self.region_references.set_region_reference(index, region=(index, slice(None)), ref_name=self.maxs_name)
 
     # Node
+    def get_entry(self, index: int) -> dict[str, Any]:
+        entry = self.composite.get_item_dict(index)
+        entry["ID"] = self.id_axis.components["axis"].get_id(index)
+        entry["Minimum Shape"] = tuple(self.region_references.get_from_reference(index, "min_shapes")[0])
+        entry["Maximum Shape"] = tuple(self.region_references.get_from_reference(index, "max_shapes")[0])
+        return entry
+    
     def set_entry(
         self,
         index: int,
@@ -247,8 +254,11 @@ class ContentDatasetComponent(NodeDatasetComponent):
 
         self.set_entry_dict(index, item, map_)
 
-        self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.mins_name)
-        self.region_references.set_reference_to(index=index, value=min_shape, ref_name=self.maxs_name)
+        mins_shape = self.region_references.get_object(index=index, ref_name=self.mins_name).components["shapes"]
+        mins_shape.set_shape(index=index, shape=min_shape)
+
+        maxs_shape = self.region_references.get_object(index=index, ref_name=self.maxs_name).components["shapes"]
+        maxs_shape.set_shape(index=index, shape=max_shape)
 
         if id_ is not None:
             self.id_axis.components["axis"].insert_id(id_, index=index)

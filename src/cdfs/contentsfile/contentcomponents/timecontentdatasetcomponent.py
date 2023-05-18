@@ -157,6 +157,13 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             return self.end_axis.components["axis"].datetimes[index] if index >= 0 else None
 
     # Node
+    def get_entry(self, index: int) -> dict[str, Any]:
+        entry = super().get_entry(index=index)
+        
+        entry["Start"] = self.start_axis.components["axis"].get_datetime(index)
+        entry["End"] = self.end_axis.components["axis"].get_datetime(index)
+        return entry
+    
     def set_entry(
         self,
         index: int,
@@ -208,10 +215,10 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             self.id_axis.components["axis"].insert_id(id_, index=index)
 
         if start is not None:
-            self.start_axis.set_item(index, nanostamp(start))
+            self.start_axis[index] = nanostamp(start)
 
         if end is not None:
-            self.end_axis.set_item(index, nanostamp(end))
+            self.end_axis[index] = nanostamp(end)
 
     def append_entry(
         self,
@@ -239,12 +246,12 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             max_shape: The maximum shape in the entry.
             id_: The ID of the entry.
         """
-        self.min_shapes.append_data(np.array((min_shape,)))
+        self.min_shapes.append_data(np.array(min_shape))
         _, min_ref = self.region_references.generate_region_reference(
             (-1, slice(None)),
             ref_name=self.mins_name,
         )
-        self.max_shapes.append_data(np.array((max_shape,)))
+        self.max_shapes.append_data(np.array(max_shape))
         _, max_ref = self.region_references.generate_region_reference(
             (-1, slice(None)),
             ref_name=self.maxs_name,
@@ -305,12 +312,12 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
                 id_=id_,
             )
         else:
-            self.min_shapes.insert_data(index, np.array((min_shape,)))
+            self.min_shapes.insert_data(index, np.array(min_shape))
             min_object, min_ref = self.region_references.generate_region_reference(
                 (index, slice(None)),
                 ref_name=self.mins_name,
             )
-            self.max_shapes.insert_data(index, np.array((max_shape,)))
+            self.max_shapes.insert_data(index, np.array(max_shape))
             max_object, max_ref = self.region_references.generate_region_reference(
                 (index, slice(None)),
                 ref_name=self.maxs_name,

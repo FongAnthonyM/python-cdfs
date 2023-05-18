@@ -20,6 +20,7 @@ from typing import Any
 
 # Third-Party Packages #
 from baseobjects import BaseComposite
+from baseobjects.cachingtools import CachingObject, timed_keyless_cache
 from framestructure import DirectoryTimeFrameInterface, DirectoryTimeFrame
 from hdf5objects import HDF5File, HDF5Group
 
@@ -29,7 +30,7 @@ from ..contentsfile import ContentsFile, TimeContentFrame, TimeContentGroupCompo
 
 # Definitions #
 # Classes #
-class CDFS(BaseComposite):
+class CDFS(CachingObject, BaseComposite):
     """
 
     Class Attributes:
@@ -106,6 +107,20 @@ class CDFS(BaseComposite):
         self.set_swmr(value)
 
     @property
+    def start_datetime(self):
+        try:
+            return self.get_start_datetime.caching_call()
+        except AttributeError:
+            return self.get_start_datetime()
+
+    @property
+    def end_datimetime(self):
+        try:
+            return self.get_end_datetime.caching_call()
+        except AttributeError:
+            return self.get_end_datetime()
+
+    @property
     def contents_path(self) -> pathlib.Path:
         return self.path / self.contents_file_name
 
@@ -116,6 +131,9 @@ class CDFS(BaseComposite):
     @property
     def contents_root_node(self) -> TimeContentGroupComponent:
         return self.contents_file.contents_root_node
+    
+    def __bool__(self) -> bool:
+        return bool(self.contents_file)
 
     # Instance Methods
     # Constructors/Destructors
@@ -148,48 +166,72 @@ class CDFS(BaseComposite):
             self.mode = mode
 
         super().construct(**kwargs)
-
-        if self.contents_path.is_file():
-            self.construct_contents_file()
-            self.construct_data()
-
-    def construct_contents_file(
-        self,
-        open_: bool = True,
-        load: bool | None = None,
-        create: bool = False,
-        require: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        if load is None:
-            load = self.contents_path.is_file()
-
-        self.contents_file = self.contents_file_type(
-            file=self.contents_path,
-            mode=self.mode,
-            open_=open_,
-            load=load,
-            create=create,
-            require=require,
-            **kwargs,
-        )
-
+    
+        if open_:
+            self.open(load=load)
+    
+    # CDFS Data
     def construct_data(self, **kwargs):
         self.data = self.default_frame_type(
             path=self.path,
             content_map=self.contents_root,
             **kwargs
         )
-
-    def require(self, **kwargs):
-        self.path.mkdir(exist_ok=True)
-
-        if self.contents_file is None:
-            self.construct_contents_file(create=True, require=True, **kwargs)
-            self.construct_data()
+                
+    # File
+    def open_contents_file(
+        self,
+        mode: str | None = None,
+        load: bool | None = None,
+        create: bool = False,
+        require: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        if mode is not None:
+            self.mode = mode
+        
+        if self.contents_path.is_file():
+            load = True if load is None else load
+        elif not create:
+            raise ValueError("Contents file does not exist.")
         else:
-            self.contents_file.require(**kwargs)
-
+            self.path.mkdir(exist_ok=True)
+        
+        if self.contents_file is None:
+            self.contents_file = self.contents_file_type(
+                file=self.contents_path,
+                mode=self.mode,
+                open_=True,
+                load=load,
+                create=create,
+                require=require,
+                **kwargs,
+            )
+        else:
+            self.contents_file.require( 
+                mode=self.mode,
+                load=load,
+                require=require,
+                **kwargs,
+            )
+    
+    def open(
+        self,
+        mode: str | None = None,
+        build: bool = False,
+        load: bool | None = None,
+        create: bool = False,
+        require: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        self.open_contents_file(mode=mode, load=build or load, create=create, require=require, **kwargs)
+            
+        if load:
+            self.construct_data()
+            
+    def close(self):
+        self.contents_file.close()
+    
     @abstractmethod
     def build_swmr(self, **kwargs):
         pass
@@ -198,8 +240,10 @@ class CDFS(BaseComposite):
         self.contents_file.swmr_mode = value
         self._swmr_mode = value
 
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_datetime(self):
         return self.contents_root_node.get_start_datetime()
 
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_datetime(self):
         return self.contents_root_node.get_end_datetime()

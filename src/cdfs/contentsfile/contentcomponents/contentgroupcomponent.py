@@ -46,6 +46,7 @@ class ContentGroupComponent(NodeGroupComponent):
         **kwargs: Keyword arguments for inheritance.
     """
     default_get_recursive: str = "get_recursive_entry_index"
+    default_set_recursive: str = "set_recursive_entry_index"
     default_append_recursive: str = "append_recursive_entry_index"
     default_insert_recursive: str = "insert_recursive_entry_index"
 
@@ -54,6 +55,8 @@ class ContentGroupComponent(NodeGroupComponent):
     def __init__(
         self,
         composite: Any = None,
+        get_method: str | None = None,
+        set_method: str | None = None,
         append_method: str | None = None,
         insert_method: str | None = None,
         init: bool = True,
@@ -63,6 +66,10 @@ class ContentGroupComponent(NodeGroupComponent):
         self.get_recursive_entry: MethodMultiplexer = MethodMultiplexer(
             instance=self,
             select=self.default_get_recursive,
+        )
+        self.set_recursive_entry: MethodMultiplexer = MethodMultiplexer(
+            instance=self,
+            select=self.default_set_recursive,
         )
         
         self.append_recursive_entry: MethodMultiplexer = MethodMultiplexer(
@@ -80,7 +87,14 @@ class ContentGroupComponent(NodeGroupComponent):
 
         # Object Construction #
         if init:
-            self.construct(composite=composite, append_method=append_method, insert_method=insert_method, **kwargs)
+            self.construct(
+                composite=composite, 
+                get_method=get_method,
+                set_method=set_method,
+                append_method=append_method, 
+                insert_method=insert_method, 
+                **kwargs,
+            )
 
     @property
     def length(self) -> int:
@@ -102,6 +116,8 @@ class ContentGroupComponent(NodeGroupComponent):
     def construct(
         self,
         composite: Any = None,
+        get_method: str | None = None,
+        set_method: str | None = None,
         append_method: str | None = None,
         insert_method: str | None = None,
         **kwargs: Any,
@@ -113,6 +129,12 @@ class ContentGroupComponent(NodeGroupComponent):
             insert_method: The attribute name of the method to use as the insert recursive entry method.
             **kwargs: Keyword arguments for inheritance.
         """
+        if get_method is not None:
+            self.get_recursive_entry.select(name=get_method)
+        
+        if set_method is not None:
+            self.set_recursive_entry.select(name=set_method)
+        
         if append_method is not None:
             self.append_recursive_entry.select(name=append_method)
 
@@ -233,7 +255,7 @@ class ContentGroupComponent(NodeGroupComponent):
                 raise e
     
     # Entry Getting
-    def get_recursive_entry_index(self, indices: Iterable, **kwargs: Any) -> Any:
+    def get_recursive_entry_index(self, indices: Iterable | int, **kwargs: Any) -> Any:
         """Gets an entry recursively from this object's children using indices.
         
         Args:
@@ -247,11 +269,74 @@ class ContentGroupComponent(NodeGroupComponent):
 
         index = indices.pop(0)
         if indices:
-            return self.get_child(index).get_recursive_entry(indices)
+            return self.get_child(index).components[self.child_component_name].get_recursive_entry_index(indices)
         else:
-            return self.node_map[index]
+            return self.node_map.components[self.node_component_name].get_entry(index=index)
 
+    # Entry Setting
+    def set_recursive_entry_index(
+        self,
+        indices: Iterable[int],
+        paths: Iterable[str],
+        map_: HDF5Map | None = None,
+        axis: int = 0,
+        min_shape: tuple[int] = (0,),
+        max_shape: tuple[int] = (0,),
+        ids: Iterable[str | uuid.UUID | None] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Sets an entry recursively into its children using indices.
 
+        Args:
+            indices: The indices to recursively insert into.
+            paths: The path names which the entry represents.
+            map_: The map to the object that should be stored in the entry.
+            axis: The axis dimension number which the data concatenated along.
+            min_shape: The minimum shape in the entry.
+            max_shape: The maximum shape in the entry.
+            ids: The child IDs for the entry.
+        """
+        if not isinstance(indices, list):
+            indices = list(indices)
+
+        if not isinstance(paths, list):
+            paths = list(paths)
+
+        if ids is not None and not isinstance(ids, list):
+            ids = list(ids)
+
+        index = indices.pop(0)
+        path = paths.pop(0)
+        id_ = ids.pop(0) if ids else None
+        child = self.get_child(index)
+        if paths:
+            child_node_component = child.components[self.child_component_name]
+            child_node_component.set_recursive_entry(
+                indices,
+                paths=paths,
+                map_=map_,
+                axis=axis,
+                min_shape=min_shape,
+                max_shape=max_shape,
+                ids=ids,
+            )
+        
+            self.node_map.components[self.node_component_name].set_entry(
+                index=index,
+                min_shape=child_node_component.min_shape,
+                max_shape=child_node_component.max_shape,
+            )
+        else:
+            self.node_map.components[self.node_component_name].set_entry(
+                index=index,
+                paths=paths,
+                map_=map_,
+                axis=axis,
+                min_shape=min_shape,
+                max_shape=max_shape,
+                ids=ids,
+            )
+    
     # Entry Appending
     def append_recursive_entry_index(
         self,
