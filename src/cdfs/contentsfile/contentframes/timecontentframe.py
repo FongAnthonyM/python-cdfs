@@ -17,12 +17,13 @@ from collections.abc import Iterable
 from decimal import Decimal
 import pathlib
 from typing import Any
+from warnings import warn
 
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
-from dspobjects.time import Timestamp, nanostamp
+from dspobjects.time import Timestamp
 from framestructure import DirectoryTimeFrame, DirectoryTimeFrameInterface
-from hdf5objects import HDF5Group
+from hdf5objects import HDF5Group, HDF5Dataset
 import numpy as np
 
 # Local Packages #
@@ -162,12 +163,15 @@ class TimeContentFrame(DirectoryTimeFrame):
         """
         for frame_info in self.content_map.components["tree_node"].node_map.get_item_dicts_iter():
             path = self.path / frame_info["Path"]
-            self.frame_paths.add(path)
-            self.frames.append(self.frame_type(
-                path,
-                open_=open_,
-                **kwargs,
-            ))
+            if path.is_file():
+                self.frame_paths.add(path)
+                self.frames.append(self.frame_type(
+                    path,
+                    open_=open_,
+                    **kwargs,
+                ))
+            else:
+                warn(f"{path} is missing")
         self.clear_caches()
 
     def construct_node_frames(self, open_=False, **kwargs) -> None:
@@ -180,8 +184,9 @@ class TimeContentFrame(DirectoryTimeFrame):
         for frame_info in self.content_map.components["tree_node"].node_map.get_item_dicts_iter():
             path = self.path / frame_info["Path"]
             group = self.content_map.file[frame_info["Node"]]
-            self.frame_paths.add(path)
-            self.frames.append(self.node_frame_type(path=path, content_map=group, open_=open_, **kwargs))
+            if path.is_dir() or path.is_file():
+                self.frame_paths.add(path)
+                self.frames.append(self.node_frame_type(path=path, content_map=group, open_=open_, **kwargs))
         self.clear_caches()
 
     def construct_frames(self, open_=False, **kwargs) -> None:
