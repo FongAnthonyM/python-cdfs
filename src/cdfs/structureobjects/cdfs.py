@@ -205,6 +205,7 @@ class CDFS(CachingObject, BaseComposite):
                 load=load,
                 create=create,
                 require=require,
+                swmr=True if self.mode == "r" else False,
                 **kwargs,
             )
         else:
