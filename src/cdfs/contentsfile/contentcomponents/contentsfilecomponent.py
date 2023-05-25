@@ -23,4 +23,5 @@ from hdf5objects.treehierarchy import RootNodeComponent
 # Definitions #
 # Classes #
 class ContentsFileComponent(RootNodeComponent):
-    pass
+    def correct_contents(self, path):
+        raise NotImplementedError

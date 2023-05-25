@@ -172,9 +172,9 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         map_: HDF5Map | None = None,
-        axis: int = 0,
-        min_shape: tuple[int] = (0,),
-        max_shape: tuple[int] = (0,),
+        axis: int | None = None,
+        min_shape: tuple[int] | None = None,
+        max_shape: tuple[int]| None = None,
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
@@ -205,11 +205,13 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
 
         self.set_entry_dict(index, item, map_)
 
-        mins_shape = self.region_references.get_object(index=index, ref_name=self.mins_name).components["shapes"]
-        mins_shape.set_shape(index=index, shape=min_shape)
+        if min_shape is not None:
+            mins_shape = self.region_references.get_object(index=index, ref_name=self.mins_name).components["shapes"]
+            mins_shape.set_shape(index=index, shape=min_shape)
 
-        maxs_shape = self.region_references.get_object(index=index, ref_name=self.maxs_name).components["shapes"]
-        maxs_shape.set_shape(index=index, shape=max_shape)
+        if max_shape is not None:
+            maxs_shape = self.region_references.get_object(index=index, ref_name=self.maxs_name).components["shapes"]
+            maxs_shape.set_shape(index=index, shape=max_shape)
 
         if id_ is not None:
             self.id_axis.components["axis"].insert_id(id_, index=index)
@@ -219,6 +221,12 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
 
         if end is not None:
             self.end_axis[index] = nanostamp(end)
+
+    def delete_entry(self, index: int) -> None:
+        self.start_axis.delete_data(index)
+        self.end_axis.delete_data(index)
+        
+        super().delete_entry(index)
 
     def append_entry(
         self,
@@ -420,31 +428,38 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         starts = self.start_axis[...]
         ends = self.end_axis[...]
         for i, child_ref in enumerate(child_refs):
-            child = self.composite.file[child_ref]
-            min_shape = child.min_shape
-            max_shape = child.max_shape
+            if child_ref:
+                child = self.composite[child_ref].components["tree_node"]
+                min_shape = child.min_shape
+                max_shape = child.max_shape
+    
+                self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.mins_name)
+                _, min_ref = self.region_references.generate_region_reference(
+                    (i, slice(len(min_shape))),
+                    ref_name=self.mins_name,
+                )
+                self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.maxs_name)
+                _, max_ref = self.region_references.generate_region_reference(
+                    (i, slice(len(max_shape))),
+                    ref_name=self.maxs_name,
+                )
+    
+                new = {
+                    "Axis": child.axis,
+                    "Minimum Shape": min_ref,
+                    "Maximum Shape": max_ref,
+                    "Sample Rate": child.sample_rate,
+                }
+                data[i] = self.composite.item_to_dict(self.composite.item_to_dict(data[i]) | new)
+                starts[i] = nanostamp(child.get_start_datetime())
+                ends[i] = nanostamp(child.get_end_datetime())
 
-            self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.mins_name)
-            _, min_ref = self.region_references.generate_region_reference(
-                (i, slice(len(min_shape))),
-                ref_name=self.mins_name,
-            )
-            self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.maxs_name)
-            _, max_ref = self.region_references.generate_region_reference(
-                (i, slice(len(max_shape))),
-                ref_name=self.maxs_name,
-            )
+        self.composite.set_data_exclusively(data)
+        self.start_axis.set_data_exclusively(starts)
+        self.start_axis.set_data_exclusively(ends)
 
-            new = {
-                "Axis": child.axis,
-                "Minimum Shape": min_ref,
-                "Maximum Shape": max_ref,
-                "Sample Rate": child.sample_rate,
-            }
-            data[i] = self.composite.item_to_dict(self.composite.item_to_dict(data[i]) | new)
-            starts[i] = nanostamp(child.get_start_datetime())
-            ends[i] = nanostamp(child.get_end_datetime())
-
-        self.composite.data_exclusively(data)
-        self.start_axis.data_exclusively(starts)
-        self.start_axis.data_exclusively(ends)
+    def entry_iter(self):
+        for index, entry in super().entry_iter():
+            entry["Start"] = self.start_axis.components["axis"].get_datetime(index)
+            entry["End"] = self.end_axis.components["axis"].get_datetime(index)
+            yield index, entry

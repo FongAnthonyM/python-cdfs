@@ -276,8 +276,8 @@ class ContentGroupComponent(NodeGroupComponent):
     # Entry Setting
     def set_recursive_entry_index(
         self,
-        indices: Iterable[int],
-        paths: Iterable[str],
+        indices: int | Iterable[int],
+        paths: str | Iterable[str],
         map_: HDF5Map | None = None,
         axis: int = 0,
         min_shape: tuple[int] = (0,),

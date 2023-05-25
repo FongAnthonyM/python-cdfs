@@ -227,9 +227,9 @@ class ContentDatasetComponent(NodeDatasetComponent):
         index: int,
         path: str | None = None,
         map_: HDF5Map | None = None,
-        axis: int = 0,
-        min_shape: tuple[int] = (0,),
-        max_shape: tuple[int] = (0,),
+        axis: int | None = None,
+        min_shape: tuple[int] | None = None,
+        max_shape: tuple[int] | None = None,
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
@@ -253,15 +253,29 @@ class ContentDatasetComponent(NodeDatasetComponent):
             item["Axis"] = axis
 
         self.set_entry_dict(index, item, map_)
-
-        mins_shape = self.region_references.get_object(index=index, ref_name=self.mins_name).components["shapes"]
-        mins_shape.set_shape(index=index, shape=min_shape)
-
-        maxs_shape = self.region_references.get_object(index=index, ref_name=self.maxs_name).components["shapes"]
-        maxs_shape.set_shape(index=index, shape=max_shape)
+        
+        if min_shape is not None:
+            mins_shape = self.region_references.get_object(index=index, ref_name=self.mins_name).components["shapes"]
+            mins_shape.set_shape(index=index, shape=min_shape)
+        
+        if max_shape is not None:
+            maxs_shape = self.region_references.get_object(index=index, ref_name=self.maxs_name).components["shapes"]
+            maxs_shape.set_shape(index=index, shape=max_shape)
 
         if id_ is not None:
             self.id_axis.components["axis"].insert_id(id_, index=index)
+
+    def delete_entry(self, index: int) -> None:
+        self.id_axis.components["axis"].delete_id(index=index)
+        
+        min_shapes = self.region_references.get_object(index=index, ref_name=self.mins_name)
+        min_shapes.delete(index)
+
+        max_shapes = self.region_references.get_object(index=index, ref_name=self.maxs_name)
+        max_shapes.delete(index)
+
+        self.composite.delete_data(index)
+        self.update_entries()
 
     def append_entry(
         self,
@@ -386,3 +400,10 @@ class ContentDatasetComponent(NodeDatasetComponent):
             data[i] = self.composite.item_to_dict(self.composite.item_to_dict(data[i]) | new)
 
         self.composite.data_exclusively(data)
+
+    def entry_iter(self):
+        for index, entry in enumerate(self.composite.get_item_dicts_iter()):
+            entry["ID"] = self.id_axis.components["axis"].get_id(index)
+            entry["Minimum Shape"] = tuple(self.region_references.get_from_reference(index, "min_shapes")[0])
+            entry["Maximum Shape"] = tuple(self.region_references.get_from_reference(index, "max_shapes")[0])
+            yield index, entry

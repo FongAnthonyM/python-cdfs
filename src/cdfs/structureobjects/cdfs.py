@@ -231,7 +231,10 @@ class CDFS(CachingObject, BaseComposite):
             
     def close(self):
         self.contents_file.close()
-    
+
+    def correct_contents(self) -> None:
+        self.contents_file.components["contents"].correct_contents()
+
     @abstractmethod
     def build_swmr(self, **kwargs):
         pass
