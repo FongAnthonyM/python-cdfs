@@ -149,10 +149,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         if content_map is not None:
             self.content_map = content_map
 
-        super().construct(path=path, frames=frames, mode=mode, update=update)
-
-        if build:
-            self.construct_frames(open_=open_, mode=self.mode, **kwargs)
+        super().construct(path=path, frames=frames, mode=mode, update=update, open_=open_, build=build, **kwargs)
 
     def construct_leaf_frames(self, open_=False, **kwargs) -> None:
         """Constructs the frames for this object when they are leaves.
@@ -196,6 +193,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
+        self.frames.clear()
         if self.content_map.attributes["tree_type"] == "Node":
             self.construct_node_frames(open_=open_, **kwargs)
         else:
