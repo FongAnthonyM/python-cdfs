@@ -236,7 +236,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the start_timestamp datetimes.
         """
-        return self.content_map.node_map.components["start_times"].get_datetimes()
+        return self.content_map.components["tree_node"].node_map.components["start_times"].get_datetimes()
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_nanostamps(self) -> np.ndarray:
@@ -245,7 +245,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the start_nanostamp nanostamps.
         """
-        return self.content_map.node_map.components["start_times"].get_nanostamps()
+        return self.content_map.components["tree_node"].node_map.components["start_times"].get_nanostamps()
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_timestamps(self) -> np.ndarray:
@@ -254,7 +254,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the start_timestamp timestamps.
         """
-        return self.content_map.node_map.components["start_times"].get_timestamps()
+        return self.content_map.components["tree_node"].node_map.components["start_times"].get_timestamps()
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_datetimes(self) -> tuple[Timestamp | None]:
@@ -263,7 +263,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the end_timestamp datetimes.
         """
-        return self.content_map.node_map.components["end_times"].get_datetimes()
+        return self.content_map.components["tree_node"].node_map.components["end_times"].get_datetimes()
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_nanostamps(self) -> np.ndarray:
@@ -272,7 +272,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the end_nanostamp nanostamps.
         """
-        return self.content_map.node_map.components["end_times"].get_nanostamps()
+        return self.content_map.components["tree_node"].node_map.components["end_times"].get_nanostamps()
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_timestamps(self) -> np.ndarray:
@@ -281,7 +281,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the end_timestamp timestamps.
         """
-        return self.content_map.node_map.components["end_times"].get_timestamps()
+        return self.content_map.components["tree_node"].node_map.components["end_times"].get_timestamps()
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_rates(self) -> tuple[float]:
@@ -290,7 +290,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             The sample rates of all contained frames.
         """
-        return tuple(float(r) for r in self.content_map.node_map.get_field("Sample Rate"))
+        return tuple(float(r) for r in self.content_map.components["tree_node"].node_map.get_field("Sample Rate"))
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_rates_decimal(self) -> tuple[Decimal]:
@@ -299,7 +299,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             The sample rates of all contained frames.
         """
-        return tuple(Decimal(r) for r in self.content_map.node_map.get_field("Sample Rate"))
+        return tuple(Decimal(r) for r in self.content_map.components["tree_node"].node_map.get_field("Sample Rate"))
 
 
 # Assign Cyclic Definitions
