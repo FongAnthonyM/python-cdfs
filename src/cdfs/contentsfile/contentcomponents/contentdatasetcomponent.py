@@ -200,7 +200,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         return int(sum(self.get_lengths()))
     
     def get_min_shape(self) -> tuple[int, ...]:
-        min_shape = list(self.min_shapes.components["shapes"].get_min_shape(ignor_zeros=True))
+        min_shape = list(self.min_shapes.components["shapes"].get_min_shape(ignore_zeros=True))
         min_shape[0] = self.get_length()  # Add a way to select main axis which the data is append along
         return tuple(min_shape)
 
