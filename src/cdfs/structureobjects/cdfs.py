@@ -171,11 +171,13 @@ class CDFS(CachingObject, BaseComposite):
             self.open(load=load)
     
     # CDFS Data
-    def construct_data(self, **kwargs):
+    def construct_data(self, mode: str = "r", swmr: bool = True, **kwargs):
         self.data = self.default_frame_type(
             path=self.path,
             content_map=self.contents_root,
-            **kwargs
+            mode=mode,
+            swmr=swmr,
+            **kwargs,
         )
                 
     # File
