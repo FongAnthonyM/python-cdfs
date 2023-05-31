@@ -159,7 +159,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
-        for frame_info in self.content_map.components["tree_node"].node_map.get_item_dicts_iter():
+        for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map.get_item_dicts_iter()):
             path = self.path / frame_info["Path"]
             if path not in self.frame_paths:
                 if path.is_file():
