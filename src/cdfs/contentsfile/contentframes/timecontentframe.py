@@ -182,11 +182,12 @@ class TimeContentFrame(DirectoryTimeFrame):
         for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map.get_item_dicts_iter()):
             path = self.path / frame_info["Path"]
             group = self.content_map.file[frame_info["Node"]]
-            if path not in self.frame_paths and (path.is_dir() or path.is_file()):
-                self.frame_paths.add(path)
-                self.frames.append(self.node_frame_type(path=path, content_map=group, open_=open_, **kwargs))
-            else:
-                self.frames[i].update_frames()
+            if path.is_dir() or path.is_file():
+                if path not in self.frame_paths:
+                    self.frame_paths.add(path)
+                    self.frames.append(self.node_frame_type(path=path, content_map=group, open_=open_, **kwargs))
+                else:
+                    self.frames[i].update_frames()
         self.clear_caches()
 
     def construct_frames(self, open_=False, **kwargs) -> None:
