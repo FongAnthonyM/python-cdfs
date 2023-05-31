@@ -224,7 +224,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             The minimum shapes of the contained frames/objects.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return tuple(self.content_map.components["tree_node"].get_min_shape())
 
@@ -235,7 +235,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             The maximum shapes of the contained frames/objects.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return tuple(self.content_map.components["tree_node"].get_min_shape())
 
@@ -246,7 +246,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the lengths of the contained frames/objects.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return self.content_map.components["tree_node"].get_lengths()
 
@@ -257,7 +257,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the start_timestamp datetimes.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return self.content_map.components["tree_node"].node_map.components["start_times"].get_datetimes()
 
@@ -268,7 +268,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the start_nanostamp nanostamps.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return self.content_map.components["tree_node"].node_map.components["start_times"].get_nanostamps()
 
@@ -279,7 +279,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the start_timestamp timestamps.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return self.content_map.components["tree_node"].node_map.components["start_times"].get_timestamps()
 
@@ -290,7 +290,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the end_timestamp datetimes.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return self.content_map.components["tree_node"].node_map.components["end_times"].get_datetimes()
 
@@ -301,7 +301,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the end_nanostamp nanostamps.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return self.content_map.components["tree_node"].node_map.components["end_times"].get_nanostamps()
 
@@ -312,7 +312,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             All the end_timestamp timestamps.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return self.content_map.components["tree_node"].node_map.components["end_times"].get_timestamps()
 
@@ -323,7 +323,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             The sample rates of all contained frames.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return tuple(float(r) for r in self.content_map.components["tree_node"].node_map.get_field("Sample Rate"))
 
@@ -334,7 +334,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         Returns:
             The sample rates of all contained frames.
         """
-        if self.content_map.file.swmr:
+        if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
         return tuple(Decimal(r) for r in self.content_map.components["tree_node"].node_map.get_field("Sample Rate"))
 
