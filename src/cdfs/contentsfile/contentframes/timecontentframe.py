@@ -252,7 +252,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         """
         if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
-        return tuple(self.content_map.components["tree_node"].get_lengths()[i] for i in self.valid_indices)
+        return self.content_map.components["tree_node"].get_lengths()
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_datetimes(self, **kwargs) -> tuple[Timestamp | None]:

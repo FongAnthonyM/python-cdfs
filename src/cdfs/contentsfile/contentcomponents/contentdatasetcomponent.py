@@ -193,8 +193,13 @@ class ContentDatasetComponent(NodeDatasetComponent):
     def set_max_shapes_dataset(self, object_: HDF5Dataset | h5py.Dataset | h5py.Reference | None) -> None:
         self.region_references.set_object_reference(object_=object_, ref_name=self.maxs_name)
 
-    def get_lengths(self) -> tuple[int, ...]:
-        return tuple(self.min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]))
+    def get_lengths(self, ignore_zeros: bool = True) -> tuple[int, ...]:
+        if ignore_zeros:
+            return tuple(
+                self.min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]) if self.min_shapes[i, a] > 0
+            )
+        else:
+            return tuple(self.min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]))
     
     def get_length(self) -> int:
         return int(sum(self.get_lengths()))
