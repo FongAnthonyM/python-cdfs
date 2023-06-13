@@ -1,4 +1,4 @@
-""" contentsfile.py
+"""contentsfile.py
 An HDF5 file which tracks the contents of the data in the CDFS.
 """
 # Package Header #
@@ -27,6 +27,7 @@ from .contentmaps import ContentGroupMap
 # Classes #
 class ContentsFileMap(BaseHDF5Map):
     """A map which outlines a generic content file."""
+
     default_map_names: Mapping[str, str] = {"contents": "contents"}
     default_maps: Mapping[str, HDF5Map] = {
         "contents": ContentGroupMap(),
@@ -35,6 +36,7 @@ class ContentsFileMap(BaseHDF5Map):
 
 class ContentsFile(BaseHDF5):
     """An HDF5 file which tracks the contents of the data in the CDFS."""
+
     FILE_TYPE: str = "ContentsFile"
     default_map: HDF5Map = ContentsFileMap()
     default_component_types = {"contents": (ContentsFileComponent, {})}

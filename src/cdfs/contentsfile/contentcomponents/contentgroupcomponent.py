@@ -1,4 +1,4 @@
-""" contentgroupcomponent.py
+"""contentgroupcomponent.py
 A node component which implements an interface for a content dataset
 """
 # Package Header #
@@ -45,6 +45,7 @@ class ContentGroupComponent(NodeGroupComponent):
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for inheritance.
     """
+
     default_get_recursive: str = "get_recursive_entry_index"
     default_set_recursive: str = "set_recursive_entry_index"
     default_append_recursive: str = "append_recursive_entry_index"
@@ -71,7 +72,7 @@ class ContentGroupComponent(NodeGroupComponent):
             instance=self,
             select=self.default_set_recursive,
         )
-        
+
         self.append_recursive_entry: MethodMultiplexer = MethodMultiplexer(
             instance=self,
             select=self.default_append_recursive,
@@ -88,18 +89,18 @@ class ContentGroupComponent(NodeGroupComponent):
         # Object Construction #
         if init:
             self.construct(
-                composite=composite, 
+                composite=composite,
                 get_method=get_method,
                 set_method=set_method,
-                append_method=append_method, 
-                insert_method=insert_method, 
+                append_method=append_method,
+                insert_method=insert_method,
                 **kwargs,
             )
 
     @property
     def length(self) -> int:
         """The minimum shape of this node."""
-        return  self.node_map.components[self.node_component_name].get_length()
+        return self.node_map.components[self.node_component_name].get_length()
 
     @property
     def min_shape(self) -> tuple[int] | None:
@@ -131,10 +132,10 @@ class ContentGroupComponent(NodeGroupComponent):
         """
         if get_method is not None:
             self.get_recursive_entry.select(name=get_method)
-        
+
         if set_method is not None:
             self.set_recursive_entry.select(name=set_method)
-        
+
         if append_method is not None:
             self.append_recursive_entry.select(name=append_method)
 
@@ -234,15 +235,15 @@ class ContentGroupComponent(NodeGroupComponent):
                 max_shape=max_shape,
                 id_=id_,
             )
-    
+
     # Get Child
     def get_child(self, index: int, default: Any = SENTINEL) -> Any:
         """Gets the child group at the given index.
-        
+
         Args:
             index: The index of the child group to get.
             default: The default item to return if the requested child could not be returned.
-        
+
         Return:
             The requested child group or the default.
         """
@@ -253,14 +254,14 @@ class ContentGroupComponent(NodeGroupComponent):
                 return default
             else:
                 raise e
-    
+
     # Entry Getting
     def get_recursive_entry_index(self, indices: Iterable | int, **kwargs: Any) -> Any:
         """Gets an entry recursively from this object's children using indices.
-        
+
         Args:
             indices: The indices to recursively get the entry from.
-        
+
         Return:
             The requested entry.
         """
@@ -320,7 +321,7 @@ class ContentGroupComponent(NodeGroupComponent):
                 max_shape=max_shape,
                 ids=ids,
             )
-        
+
             self.node_map.components[self.node_component_name].set_entry(
                 index=index,
                 min_shape=child_node_component.min_shape,
@@ -336,7 +337,7 @@ class ContentGroupComponent(NodeGroupComponent):
                 max_shape=max_shape,
                 ids=ids,
             )
-    
+
     # Entry Appending
     def append_recursive_entry_index(
         self,

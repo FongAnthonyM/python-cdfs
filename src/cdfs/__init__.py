@@ -1,4 +1,4 @@
-""" __init__.py
+"""__init__.py
 
 """
 # Package Header #
@@ -14,4 +14,3 @@ __email__ = __email__
 # Imports #
 # Local Packages #
 from .structureobjects import *
-

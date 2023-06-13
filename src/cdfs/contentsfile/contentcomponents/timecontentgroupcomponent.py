@@ -1,4 +1,4 @@
-""" contentgroupcomponent.py
+"""contentgroupcomponent.py
 A node component which implements an interface for a time content dataset.
 """
 # Package Header #
@@ -32,6 +32,7 @@ from .contentgroupcomponent import ContentGroupComponent, SENTINEL
 # Classes #
 class TimeContentGroupComponent(ContentGroupComponent):
     """"A node component which implements an interface for a time content dataset."""
+
     @property
     def sample_rate(self) -> float:
         """The sample rate of this node if all children have the same sample_rate."""
@@ -371,7 +372,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 return default
             else:
                 raise e
-            
+
     def get_child_start_date(
         self,
         start: datetime | date | float | int | np.dtype,
@@ -402,7 +403,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
         start_date = Timestamp(start_date, tz=tz)
         try:
             index, dt = self.node_map.components["start_times"].find_time_index(start_date, approx=True, tails=True)
-            
+
             if dt.date() == start_date.date():
                 return index, self.node_map.components["object_reference"].get_object(index, ref_name="node")
             else:
@@ -433,7 +434,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
         """
         if not isinstance(starts, list):
             starts = list(starts)
-        
+
         try:
             index, child = self.get_child_start(starts.pop(0), approx=approx, tails=tails)
             if starts:
@@ -469,7 +470,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
         """
         try:
             index, child = self.get_child_start(start, approx=True, tails=True)
-       
+
             if child is not None:
                 return child.components[self.child_component_name].get_recursive_entry_start(
                     start,
@@ -702,7 +703,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 max_shape=max_shape,
                 ids=ids,
             )
-    
+
     # Entry Appending
     def append_recursive_entry_index(
         self,

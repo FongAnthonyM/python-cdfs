@@ -1,8 +1,6 @@
-""" contentdatasetcomponent.py
+"""contentdatasetcomponent.py
 A node component which implements content information in its dataset.
 """
-import h5py
-
 # Package Header #
 from ...header import *
 
@@ -19,6 +17,7 @@ from typing import Any
 import uuid
 
 # Third-Party Packages #
+import h5py
 from hdf5objects import HDF5Map, HDF5Dataset
 from hdf5objects.dataset import ObjectReferenceComponent, RegionReferenceComponent
 from hdf5objects.treehierarchy import NodeDatasetComponent
@@ -47,6 +46,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         id_name: The name of the ID axis.
         **kwargs: Keyword arguments for inheritance.
     """
+
     default_i_axis: int = 0
     default_id_name: str = "id_axis"
     default_object_references_name: str = "object_reference"
@@ -91,8 +91,8 @@ class ContentDatasetComponent(NodeDatasetComponent):
         if init:
             self.construct(
                 composite=composite,
-                i_axis = i_axis,
-                id_name = id_name,
+                i_axis=i_axis,
+                id_name=id_name,
                 object_ref_name=object_ref_name,
                 node_name=node_name,
                 region_ref_name=region_ref_name,
@@ -200,10 +200,10 @@ class ContentDatasetComponent(NodeDatasetComponent):
             )
         else:
             return tuple(self.min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]))
-    
+
     def get_length(self) -> int:
         return int(sum(self.get_lengths()))
-    
+
     def get_min_shape(self) -> tuple[int, ...]:
         min_shape = list(self.min_shapes.components["shapes"].get_min_shape(ignore_zeros=True))
         min_shape[0] = self.get_length()  # Add a way to select main axis which the data is append along
@@ -226,7 +226,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         entry["Minimum Shape"] = tuple(self.region_references.get_from_reference(index, "min_shapes")[0])
         entry["Maximum Shape"] = tuple(self.region_references.get_from_reference(index, "max_shapes")[0])
         return entry
-    
+
     def set_entry(
         self,
         index: int,
@@ -258,11 +258,11 @@ class ContentDatasetComponent(NodeDatasetComponent):
             item["Axis"] = axis
 
         self.set_entry_dict(index, item, map_)
-        
+
         if min_shape is not None:
             mins_shape = self.region_references.get_object(index=index, ref_name=self.mins_name).components["shapes"]
             mins_shape.set_shape(index=index, shape=min_shape)
-        
+
         if max_shape is not None:
             maxs_shape = self.region_references.get_object(index=index, ref_name=self.maxs_name).components["shapes"]
             maxs_shape.set_shape(index=index, shape=max_shape)
@@ -272,7 +272,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
 
     def delete_entry(self, index: int) -> None:
         self.id_axis.components["axis"].delete_id(index=index)
-        
+
         min_shapes = self.region_references.get_object(index=index, ref_name=self.mins_name)
         min_shapes.delete(index)
 

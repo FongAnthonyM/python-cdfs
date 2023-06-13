@@ -1,4 +1,4 @@
-""" contentsfilecomponent.py
+"""contentsfilecomponent.py
 
 """
 # Package Header #

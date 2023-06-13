@@ -1,4 +1,4 @@
-""" timecontentframe.py
+"""timecontentframe.py
 
 """
 # Package Header #
@@ -53,6 +53,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         **kwargs: The keyword arguments to create contained frames.
         init: Determines if this object will construct.
     """
+
     default_node_frame_type: DirectoryTimeFrameInterface | None = None
     default_node_map: type = TimeContentGroupMap
 
@@ -63,7 +64,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         path: pathlib.Path | str | None = None,
         content_map: HDF5Group | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
-        mode: str = 'r',
+        mode: str = "r",
         update: bool = False,
         open_: bool = False,
         build: bool = True,
@@ -129,7 +130,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         path: pathlib.Path | str | None = None,
         content_map: HDF5Group | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
-        mode: str = 'r',
+        mode: str = "r",
         update: bool = False,
         open_: bool = False,
         build: bool = False,
@@ -165,11 +166,13 @@ class TimeContentFrame(DirectoryTimeFrame):
                 if path.is_file():
                     self.frame_paths.add(path)
                     self.valid_indices.append(i)
-                    self.frames.append(self.frame_type(
-                        path,
-                        open_=open_,
-                        **kwargs,
-                    ))
+                    self.frames.append(
+                        self.frame_type(
+                            path,
+                            open_=open_,
+                            **kwargs,
+                        )
+                    )
                 else:
                     warn(f"{path} is missing")
         self.clear_caches()
@@ -335,8 +338,10 @@ class TimeContentFrame(DirectoryTimeFrame):
         """
         if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
-        return tuple(float(self.content_map.components["tree_node"].node_map.get_field("Sample Rate")[i])
-                     for i in self.valid_indices)
+        return tuple(
+            float(self.content_map.components["tree_node"].node_map.get_field("Sample Rate")[i])
+            for i in self.valid_indices
+        )
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_rates_decimal(self, **kwargs) -> tuple[Decimal]:
@@ -347,8 +352,10 @@ class TimeContentFrame(DirectoryTimeFrame):
         """
         if self.content_map.file.swmr_mode:
             self.update_frames(**kwargs)
-        return tuple(Decimal(self.content_map.components["tree_node"].node_map.get_field("Sample Rate")[i])
-                     for i in self.valid_indices)
+        return tuple(
+            Decimal(self.content_map.components["tree_node"].node_map.get_field("Sample Rate")[i])
+            for i in self.valid_indices
+        )
 
 
 # Assign Cyclic Definitions

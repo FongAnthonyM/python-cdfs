@@ -1,4 +1,4 @@
-""" cdfs.py
+"""cdfs.py
 
 """
 # Package Header #
@@ -40,6 +40,7 @@ class CDFS(CachingObject, BaseComposite):
     Args:
 
     """
+
     default_component_types: dict[str, tuple[type, dict[str, Any]]] = {}
     default_frame_type: type = TimeContentFrame
     default_data_file_type: type = HDF5File
@@ -51,7 +52,7 @@ class CDFS(CachingObject, BaseComposite):
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        mode: str = 'r',
+        mode: str = "r",
         update: bool = False,
         open_: bool = True,
         load: bool = True,
@@ -60,7 +61,7 @@ class CDFS(CachingObject, BaseComposite):
     ) -> None:
         # New Attributes #
         self._path: pathlib.Path | None = None
-        self.mode: str = 'r'
+        self.mode: str = "r"
         self._swmr_mode: bool = False
 
         self.contents_file_name: str = self.default_content_file_name
@@ -131,7 +132,7 @@ class CDFS(CachingObject, BaseComposite):
     @property
     def contents_root_node(self) -> TimeContentGroupComponent:
         return self.contents_file.contents_root_node
-    
+
     def __bool__(self) -> bool:
         return bool(self.contents_file)
 
@@ -140,7 +141,7 @@ class CDFS(CachingObject, BaseComposite):
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        mode: str = 'r',
+        mode: str = "r",
         update: bool = False,
         open_: bool = False,
         load: bool = False,
@@ -166,10 +167,10 @@ class CDFS(CachingObject, BaseComposite):
             self.mode = mode
 
         super().construct(**kwargs)
-    
+
         if open_:
             self.open(load=load)
-    
+
     # CDFS Data
     def construct_data(self, mode: str = "r", swmr: bool = True, **kwargs):
         self.data = self.default_frame_type(
@@ -179,7 +180,7 @@ class CDFS(CachingObject, BaseComposite):
             swmr=swmr,
             **kwargs,
         )
-                
+
     # File
     def open_contents_file(
         self,
@@ -191,14 +192,14 @@ class CDFS(CachingObject, BaseComposite):
     ) -> None:
         if mode is not None:
             self.mode = mode
-        
+
         if self.contents_path.is_file():
             load = True if load is None else load
         elif not create:
             raise ValueError("Contents file does not exist.")
         else:
             self.path.mkdir(exist_ok=True)
-        
+
         if self.contents_file is None:
             self.contents_file = self.contents_file_type(
                 file=self.contents_path,
@@ -211,13 +212,13 @@ class CDFS(CachingObject, BaseComposite):
                 **kwargs,
             )
         else:
-            self.contents_file.require( 
+            self.contents_file.require(
                 mode=self.mode,
                 load=load,
                 require=require,
                 **kwargs,
             )
-    
+
     def open(
         self,
         mode: str | None = None,
@@ -228,10 +229,10 @@ class CDFS(CachingObject, BaseComposite):
         **kwargs: Any,
     ) -> None:
         self.open_contents_file(mode=mode, load=build or load, create=create, require=require, **kwargs)
-            
+
         if load:
             self.construct_data()
-            
+
     def close(self):
         self.contents_file.close()
 

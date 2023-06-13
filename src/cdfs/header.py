@@ -1,4 +1,4 @@
-""" header.py
+"""header.py
 Information about this package.
 """
 # Header #
@@ -12,8 +12,8 @@ __email__ = ""
 __copyright__ = "Copyright 2022, Anthony Fong"
 __license__ = "MIT"
 
-__version__ = "0.0.0"
-__status__ = "Production/Stable"
+__version__ = "0.1.0"
+__status__ = "Prototype"
 
 __all__ = [
     "__package_name__",

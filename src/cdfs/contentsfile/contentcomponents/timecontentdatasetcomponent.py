@@ -1,4 +1,4 @@
-""" contentdatasetcomponent.py
+"""contentdatasetcomponent.py
 A node component which implements time content information in its dataset.
 """
 # Package Header #
@@ -52,6 +52,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         end_name: The name of the end axis.
         **kwargs: Keyword arguments for inheritance.
     """
+
     default_s_axis = 0
     default_start_name = "start_time_axis"
     default_e_axis = 0
@@ -153,17 +154,17 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         if self.composite.size == 0:
             return None
         else:
-            index = len(np.trim_zeros(np.array(self.get_lengths()), 'b')) - 1
+            index = len(np.trim_zeros(np.array(self.get_lengths()), "b")) - 1
             return self.end_axis.components["axis"].datetimes[index] if index >= 0 else None
 
     # Node
     def get_entry(self, index: int) -> dict[str, Any]:
         entry = super().get_entry(index=index)
-        
+
         entry["Start"] = self.start_axis.components["axis"].get_datetime(index)
         entry["End"] = self.end_axis.components["axis"].get_datetime(index)
         return entry
-    
+
     def set_entry(
         self,
         index: int,
@@ -174,7 +175,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         map_: HDF5Map | None = None,
         axis: int | None = None,
         min_shape: tuple[int] | None = None,
-        max_shape: tuple[int]| None = None,
+        max_shape: tuple[int] | None = None,
         id_: str | uuid.UUID | None = None,
         **kwargs: Any,
     ) -> None:
@@ -225,7 +226,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
     def delete_entry(self, index: int) -> None:
         self.start_axis.delete_data(index)
         self.end_axis.delete_data(index)
-        
+
         super().delete_entry(index)
 
     def append_entry(
@@ -432,7 +433,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
                 child = self.composite[child_ref].components["tree_node"]
                 min_shape = child.min_shape
                 max_shape = child.max_shape
-    
+
                 self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.mins_name)
                 _, min_ref = self.region_references.generate_region_reference(
                     (i, slice(len(min_shape))),
@@ -443,7 +444,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
                     (i, slice(len(max_shape))),
                     ref_name=self.maxs_name,
                 )
-    
+
                 new = {
                     "Axis": child.axis,
                     "Minimum Shape": min_ref,
