@@ -13,7 +13,7 @@ __copyright__ = "Copyright 2022, Anthony Fong"
 __license__ = "MIT"
 
 __version__ = "0.1.0"
-__status__ = "Prototype"
+__status__ = "Planning"
 
 __all__ = [
     "__package_name__",
