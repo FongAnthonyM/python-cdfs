@@ -385,6 +385,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
                 max_shape=max_shape,
                 sample_rate=sample_rate,
                 id_=id_,
+                **kwargs,
             )
         else:
             index, dt = self.start_axis.components["axis"].find_time_index(start, approx=True, tails=True)
@@ -401,6 +402,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
                     max_shape=max_shape,
                     sample_rate=sample_rate,
                     id_=id_,
+                    **kwargs,
                 )
             else:
                 raise ValueError("Entry already exists")

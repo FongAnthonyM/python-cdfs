@@ -170,6 +170,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
 
         if map_ is None:
@@ -229,6 +230,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 id_=id_,
+                **kwargs,
             )
 
     def require_child_start(
@@ -267,6 +269,10 @@ class TimeContentGroupComponent(ContentGroupComponent):
                     return index, self.node_map.components["object_reference"].get_object(index, ref_name="node")
                 else:
                     return index, None
+            elif start < self.node_map.components["start_times"].get_nanostamp(0):
+                index = 0
+            elif start < self.node_map.components["start_times"].get_nanostamp(-1):
+                index += 1
         else:
             index = 0
 
@@ -281,6 +287,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
 
     def require_child_start_date(
@@ -342,6 +349,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
 
     # Get Child
@@ -402,7 +410,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
 
         start_date = Timestamp(start_date, tz=tz)
         try:
-            index, dt = self.node_map.components["start_times"].find_time_index(start_date, approx=True, tails=True)
+            index, dt = self.node_map.components["start_times"].find_day_index(start_date, approx=True, tails=True)
 
             if dt.date() == start_date.date():
                 return index, self.node_map.components["object_reference"].get_object(index, ref_name="node")
@@ -541,6 +549,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
@@ -562,6 +571,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
     def set_recursive_entry_start(
@@ -611,6 +621,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
@@ -632,6 +643,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
     def set_recursive_entry_start_date(
@@ -681,6 +693,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
@@ -702,6 +715,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
     # Entry Appending
@@ -756,6 +770,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
         if paths:
             child_node_component = child.components[self.child_component_name]
@@ -770,6 +785,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
@@ -825,6 +841,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
         if paths:
             child_node_component = child.components[self.child_component_name]
@@ -838,6 +855,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
@@ -893,6 +911,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
         if paths:
             child_node_component = child.components[self.child_component_name]
@@ -906,6 +925,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
@@ -969,6 +989,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
         if paths:
             child_node_component = child.components[self.child_component_name]
@@ -982,6 +1003,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
@@ -1037,6 +1059,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
         if paths:
             child_node_component = child.components[self.child_component_name]
@@ -1050,6 +1073,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
@@ -1105,6 +1129,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
             min_shape=min_shape,
             max_shape=max_shape,
             id_=id_,
+            **kwargs,
         )
         if paths:
             child_node_component = child.components[self.child_component_name]
@@ -1118,6 +1143,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 min_shape=min_shape,
                 max_shape=max_shape,
                 ids=ids,
+                **kwargs,
             )
 
             self.node_map.components[self.node_component_name].set_entry(
