@@ -180,14 +180,14 @@ class TimeContentFrame(DirectoryTimeFrame):
         """
         for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map[...]):
             path = self.path / frame_info["Path"].decode()
-            group = self.content_map.file[frame_info["Node"]]
-            if path.is_dir() or path.is_file():
-                if path not in self.frame_paths:
-                    self.frame_paths.add(path)
-                    self.valid_indices.append(i)
-                    self.frames.append(self.node_frame_type(path=path, content_map=group, open_=open_, **kwargs))
-                else:
-                    self.frames[i].update_frames()
+            if path in self.frame_paths:
+                self.frames[i].update_frames()
+            elif path.exists():
+                self.frame_paths.add(path)
+                self.valid_indices.append(i)
+                group = self.content_map.file[frame_info["Node"]]
+                self.frames.append(self.node_frame_type(path=path, content_map=group, open_=open_, **kwargs))
+
         self.clear_caches()
 
     def construct_frames(self, open_=False, **kwargs) -> None:
