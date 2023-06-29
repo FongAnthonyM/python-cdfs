@@ -160,19 +160,13 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
-        for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map.get_item_dicts_iter()):
+        for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map[...]):
             path = self.path / frame_info["Path"]
             if path not in self.frame_paths:
                 if path.is_file():
                     self.frame_paths.add(path)
                     self.valid_indices.append(i)
-                    self.frames.append(
-                        self.frame_type(
-                            path,
-                            open_=open_,
-                            **kwargs,
-                        )
-                    )
+                    self.frames.append(self.frame_type(path, open_=open_, **kwargs))
                 else:
                     warn(f"{path} is missing")
         self.clear_caches()
@@ -184,7 +178,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             open_: Determines if the frames will remain open after construction.
             **kwargs: The keyword arguments to create contained frames.
         """
-        for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map.get_item_dicts_iter()):
+        for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map[...]):
             path = self.path / frame_info["Path"]
             group = self.content_map.file[frame_info["Node"]]
             if path.is_dir() or path.is_file():
@@ -224,7 +218,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             self.construct_leaf_frames(open_=open_, **kwargs)
 
     # Getters and Setters
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_min_shape(self, **kwargs) -> tuple[int]:
         """Get the minimum shapes from the contained frames/objects if they are different across axes.
 
@@ -235,7 +229,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             self.update_frames(**kwargs)
         return tuple(self.content_map.components["tree_node"].get_min_shape())
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_max_shape(self, **kwargs) -> tuple[int]:
         """Get the maximum shapes from the contained frames/objects if they are different across axes.
 
@@ -246,7 +240,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             self.update_frames(**kwargs)
         return tuple(self.content_map.components["tree_node"].get_max_shape())
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_lengths(self, **kwargs) -> tuple[int]:
         """Get the lengths of the contained frames/objects.
 
@@ -257,7 +251,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             self.update_frames(**kwargs)
         return self.content_map.components["tree_node"].get_lengths()
 
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_start_datetimes(self, **kwargs) -> tuple[Timestamp | None]:
         """Get the start_timestamp datetimes of all contained frames.
 
@@ -269,7 +263,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         all_dt = self.content_map.components["tree_node"].node_map.components["start_times"].get_datetimes()
         return tuple(all_dt[i] for i in self.valid_indices)
 
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_start_nanostamps(self, **kwargs) -> np.ndarray:
         """Get the start_nanostamp nanostamps of all contained frames.
 
@@ -281,7 +275,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         all_ns = self.content_map.components["tree_node"].node_map.components["start_times"].get_nanostamps()
         return tuple(all_ns[i] for i in self.valid_indices)
 
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_start_timestamps(self, **kwargs) -> np.ndarray:
         """Get the start_timestamp timestamps of all contained frames.
 
@@ -293,7 +287,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         all_ts = self.content_map.components["tree_node"].node_map.components["start_times"].get_timestamps()
         return tuple(all_ts[i] for i in self.valid_indices)
 
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_end_datetimes(self, **kwargs) -> tuple[Timestamp | None]:
         """Get the end_timestamp datetimes of all contained frames.
 
@@ -305,7 +299,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         all_dt = self.content_map.components["tree_node"].node_map.components["end_times"].get_datetimes()
         return tuple(all_dt[i] for i in self.valid_indices)
 
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_end_nanostamps(self, **kwargs) -> np.ndarray:
         """Get the end_nanostamp nanostamps of all contained frames.
 
@@ -317,7 +311,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         all_ns = self.content_map.components["tree_node"].node_map.components["end_times"].get_nanostamps()
         return tuple(all_ns[i] for i in self.valid_indices)
 
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_end_timestamps(self, **kwargs) -> np.ndarray:
         """Get the end_timestamp timestamps of all contained frames.
 
@@ -329,7 +323,7 @@ class TimeContentFrame(DirectoryTimeFrame):
         all_ts = self.content_map.components["tree_node"].node_map.components["end_times"].get_timestamps()
         return tuple(all_ts[i] for i in self.valid_indices)
 
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_sample_rates(self, **kwargs) -> tuple[float]:
         """Get the sample rates of all contained frames.
 
@@ -343,7 +337,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             for i in self.valid_indices
         )
 
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+    @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_sample_rates_decimal(self, **kwargs) -> tuple[Decimal]:
         """Get the sample rates of all contained frames.
 
