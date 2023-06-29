@@ -194,12 +194,11 @@ class ContentDatasetComponent(NodeDatasetComponent):
         self.region_references.set_object_reference(object_=object_, ref_name=self.maxs_name)
 
     def get_lengths(self, ignore_zeros: bool = True) -> tuple[int, ...]:
+        min_shapes = self.min_shapes[...]
         if ignore_zeros:
-            return tuple(
-                self.min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]) if self.min_shapes[i, a] > 0
-            )
+            return tuple(min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]) if min_shapes[i, a] > 0)
         else:
-            return tuple(self.min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]))
+            return tuple(min_shapes[i, a] for i, a in enumerate(self.composite["Axis"]))
 
     def get_length(self) -> int:
         return int(sum(self.get_lengths()))
