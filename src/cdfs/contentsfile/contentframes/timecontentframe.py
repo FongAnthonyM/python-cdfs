@@ -161,7 +161,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             **kwargs: The keyword arguments to create contained frames.
         """
         for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map[...]):
-            path = self.path / frame_info["Path"]
+            path = self.path / frame_info["Path"].decode()
             if path not in self.frame_paths:
                 if path.is_file():
                     self.frame_paths.add(path)
@@ -179,7 +179,7 @@ class TimeContentFrame(DirectoryTimeFrame):
             **kwargs: The keyword arguments to create contained frames.
         """
         for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map[...]):
-            path = self.path / frame_info["Path"]
+            path = self.path / frame_info["Path"].decode()
             group = self.content_map.file[frame_info["Node"]]
             if path.is_dir() or path.is_file():
                 if path not in self.frame_paths:
