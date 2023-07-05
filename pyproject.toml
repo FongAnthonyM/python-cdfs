@@ -22,9 +22,9 @@ Changelog = "https://github.com/fongant/python-cdfs/releases"
 python = "^3.10"
 click = "^8.0.3"
 dspobjects = "^0.2.0"
-framestructure = "^0.4.0"
+framestructure = "^0.4.1"
 h5py = "^3.8.0"
-hdf5objects = "^0.3.0"
+hdf5objects = "^0.3.1"
 numpy = "^1.24.3"
 
 [tool.poetry.dev-dependencies]
