@@ -1,4 +1,4 @@
-"""contentsfile.py
+"""contentsfile_old.py
 An HDF5 file which tracks the contents of the data in the CDFS.
 """
 # Package Header #
