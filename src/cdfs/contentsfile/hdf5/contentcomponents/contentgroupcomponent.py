@@ -2,7 +2,7 @@
 A node component which implements an interface for a content dataset
 """
 # Package Header #
-from ...header import *
+from ....header import *
 
 # Header #
 __author__ = __author__

@@ -15,6 +15,7 @@ from taskblocks import TaskBlock
 from sqlalchemy import String
 from sqlalchemy import Uuid
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -24,7 +25,7 @@ from sqlalchemy.orm import mapped_column
 
 # Definitions #
 # Classes #
-class Base(DeclarativeBase):
+class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 

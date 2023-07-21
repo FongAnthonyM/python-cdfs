@@ -14,18 +14,17 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from abc import abstractmethod
-from collections.abc import Iterable
 import pathlib
 from typing import Any
 
 # Third-Party Packages #
 from baseobjects import BaseComposite
 from baseobjects.cachingtools import CachingObject, timed_keyless_cache
-from framestructure import DirectoryTimeFrameInterface, DirectoryTimeFrame
+from framestructure import DirectoryTimeFrameInterface
 from hdf5objects import HDF5File, HDF5Group
 
 # Local Packages #
-from ..contentsfile_old import ContentsFile, TimeContentFrame, TimeContentGroupComponent
+from cdfs.contentsfile.hdf5 import ContentsFile, TimeContentFrame, TimeContentGroupComponent
 
 
 # Definitions #

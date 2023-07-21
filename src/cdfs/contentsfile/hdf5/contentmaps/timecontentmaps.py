@@ -2,7 +2,7 @@
 A map for a dataset that outlines timed data across multiple files.
 """
 # Package Header #
-from ...header import *
+from cdfs.header import *
 
 # Header #
 __author__ = __author__
