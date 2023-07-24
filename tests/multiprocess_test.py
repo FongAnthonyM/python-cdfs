@@ -1,9 +1,11 @@
 # Imports #
 # Standard Libraries #
 import asyncio
+import pathlib
 from time import sleep, perf_counter_ns
 from typing import List
 from typing import Optional, Any
+import uuid
 
 # Third-Party Packages #
 from taskblocks import AsyncEvent
@@ -31,7 +33,7 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 class User(Base):
     __tablename__ = "user_account"
-    id: Mapped[Uuid] = mapped_column(primary_key=True)
+    id = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(30))
     number: Mapped[Optional[int]]
 
@@ -85,7 +87,7 @@ class WriterTask(TaskBlock):
     # Setup
     async def setup(self, *args: Any, **kwargs: Any) -> None:
         """The method to run before executing task."""
-        self.engine = create_async_engine("sqlite+aiosqlite:///test.db")
+        self.engine = create_async_engine(f"sqlite+aiosqlite:///{pathlib.Path.cwd().as_posix()}/test.db")
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
@@ -96,6 +98,7 @@ class WriterTask(TaskBlock):
             async with session.begin():
                 session.add_all([User(name="same", number=perf_counter_ns())])
                 await session.commit()
+        print(session.is_active)
 
     # Teardown
     async def teardown(self, *args: Any, **kwargs: Any) -> None:
@@ -149,7 +152,7 @@ class ReaderTask(TaskBlock):
     # Setup
     async def setup(self, *args: Any, **kwargs: Any) -> None:
         """The method to run before executing task."""
-        self.engine = create_async_engine("sqlite+aiosqlite:///test.sqlite3")
+        self.engine = create_async_engine(f"sqlite+aiosqlite://{pathlib.Path.cwd().as_posix()}/test.db")
 
     # TaskBlock
     async def task(self, *args: Any, **kwargs: Any) -> None:
@@ -168,8 +171,8 @@ class ReaderTask(TaskBlock):
 
 # Main #
 if __name__ == "__main__":
-    writer = WriterTask(is_process=True)
-    reader = ReaderTask(is_process=True)
+    writer = WriterTask(is_process=False)
+    reader = ReaderTask(is_process=False)
     writer.start()
     sleep(2)
     reader.start()

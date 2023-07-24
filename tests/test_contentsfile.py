@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" test_baseobjects.py
+""" test_contentsfile.py
 Test for the baseobjects package.
 """
 # Package Header #
@@ -15,10 +15,13 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+import asyncio
 import abc
 import pathlib
+from typing import Any
 
 # Third-Party Packages #
+from taskblocks import TaskBlock
 import pytest
 
 # Local Packages #
@@ -34,5 +37,13 @@ def tmp_dir(tmpdir):
 
 
 # Classes #
-class ClassTest(abc.ABC):
-    pass
+class TestContentsFile:
+
+    async def create_contents_file(self, path):
+        db = ContentsFile(path=path)
+        await db.create_file_async()
+
+    def test_async_contents_file(self, tmp_path):
+        file_path = pathlib.Path.cwd() / "test.db"
+        asyncio.run(self.create_contents_file(path=file_path))
+        assert file_path.is_file()

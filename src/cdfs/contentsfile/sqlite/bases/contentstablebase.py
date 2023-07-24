@@ -18,9 +18,9 @@ from typing import Any
 import uuid
 
 # Third-Party Packages #
-from baseobjects import BaseObject
-from sqlalchemy import Uuid
-from sqlalchemy.orm import Mapped, mapped_column
+from baseobjects import BaseObject, singlekwargdispatch
+from sqlalchemy import Uuid, select, Result
+from sqlalchemy.orm import Mapped, MappedColumn, mapped_column
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 import numpy as np
 
@@ -29,10 +29,11 @@ import numpy as np
 
 # Definitions #
 # Classes #
-class ContentsTableBase(BaseObject):
+class ContentsTableBase:
     __tablename__ = "contents"
-    __mapper_args__ = {"polymorphic_on": "type", "polymorphic_identity": "contents"}
-    id: Mapped = mapped_column(Uuid, primary_key=True)
+    __mapper_args__ = {"polymorphic_identity": "contents"}
+    id = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    update_id: Mapped[int]
     path: Mapped[str]
     axis: Mapped[int]
     min_shape: Mapped[str]
@@ -61,45 +62,158 @@ class ContentsTableBase(BaseObject):
     def entry(cls, **kwargs: dict[str, Any]) -> "ContentsTableBase":
         return cls(**cls.format_entry_kwargs(**kwargs))
 
+    @singlekwargdispatch(kwarg="session")
     @classmethod
     async def insert_entry_async(
         cls,
-        async_session: async_sessionmaker[AsyncSession],
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
+        commit: bool = False,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        raise TypeError(f"{type(session)} is not a valid type.")
+
+    @insert_entry_async.register(async_sessionmaker)
+    @classmethod
+    async def _insert_entry_async(
+        cls,
+        session: async_sessionmaker[AsyncSession],
         commit: bool = False,
         **kwargs: dict[str, Any],
     ) -> None:
         entry = cls.entry(**kwargs)
-        async with async_session() as session:
-            async with session.begin():
-                session.add(entry)
+        async with session() as async_session:
+            async with async_session.begin():
+                async_session.add(entry)
 
             if commit:
-                await session.commit()
+                await async_session.commit()
 
+    @insert_entry_async.register(AsyncSession)
+    @classmethod
+    async def _insert_entry_async(
+        cls,
+        session: AsyncSession,
+        commit: bool = False,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        entry = cls.entry(**kwargs)
+        async with session.begin():
+            session.add(entry)
+
+        if commit:
+            await session.commit()
+
+    @singlekwargdispatch(kwarg="session")
     @classmethod
     async def insert_entries_async(
         cls,
-        async_session: async_sessionmaker[AsyncSession],
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
         entries: Iterable,
         commit: bool = False,
     ) -> None:
-        async with async_session() as session:
-            async with session.begin():
-                session.add_all(entries)
+        raise TypeError(f"{type(session)} is not a valid type.")
+
+    @insert_entries_async.register(async_sessionmaker)
+    @classmethod
+    async def _insert_entries_async(
+        cls,
+        session: async_sessionmaker[AsyncSession],
+        entries: Iterable,
+        commit: bool = False,
+    ) -> None:
+        async with session() as async_session:
+            async with async_session.begin():
+                async_session.add_all(entries)
 
             if commit:
-                await session.commit()
+                await async_session.commit()
 
+    @insert_entries_async.register(AsyncSession)
+    @classmethod
+    async def insert_entries_async(
+        cls,
+        session: AsyncSession,
+        entries: Iterable,
+        commit: bool = False,
+    ) -> None:
+        async with session.begin():
+            session.add_all(entries)
+
+        if commit:
+            await session.commit()
+
+    @singlekwargdispatch(kwarg="session")
     @classmethod
     async def delete_entry_async(
         cls,
-        async_session: async_sessionmaker[AsyncSession],
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
         entry: "ContentsTableBase",
         commit: bool = False,
     ) -> None:
-        async with async_session() as session:
-            async with session.begin():
-                await session.delete(entry)
+        raise TypeError(f"{type(session)} is not a valid type.")
+
+    @delete_entry_async.register(async_sessionmaker)
+    @classmethod
+    async def _delete_entry_async(
+        cls,
+        session: async_sessionmaker[AsyncSession],
+        entry: "ContentsTableBase",
+        commit: bool = False,
+    ) -> None:
+        async with session() as async_session:
+            async with async_session.begin():
+                await async_session.delete(entry)
 
             if commit:
-                await session.commit()
+                await async_session.commit()
+
+    @delete_entry_async.register(AsyncSession)
+    @classmethod
+    async def _delete_entry_async(
+        cls,
+        session: AsyncSession,
+        entry: "ContentsTableBase",
+        commit: bool = False,
+    ) -> None:
+        async with session.begin():
+            await session.delete(entry)
+
+        if commit:
+            await session.commit()
+
+    @singlekwargdispatch(kwarg="session")
+    @classmethod
+    async def get_from_update_async(
+        cls,
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
+        update_id: int,
+        inclusive: bool = True,
+    ) -> Result:
+        raise TypeError(f"{type(session)} is not a valid type.")
+
+    @get_from_update_async.register(async_sessionmaker)
+    @classmethod
+    async def _get_from_update_async(
+        cls,
+        session: async_sessionmaker[AsyncSession],
+        update_id: int,
+        inclusive: bool = True,
+    ) -> Result:
+        async with session() as async_session:
+            if inclusive:
+                return await async_session.execute(select(cls).where(cls.update_id >= update_id))
+            else:
+                return await async_session.execute(select(cls).where(cls.update_id > update_id))
+
+    @get_from_update_async.register(AsyncSession)
+    @classmethod
+    async def _get_from_update_async(
+        cls,
+        session: AsyncSession,
+        update_id: int,
+        inclusive: bool = True,
+    ) -> Result:
+        if inclusive:
+            return await session.execute(select(cls).where(cls.update_id >= update_id))
+        else:
+            return await session.execute(select(cls).where(cls.update_id > update_id))
