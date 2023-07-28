@@ -417,7 +417,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
             start=child.get_start_datetime(),
             end=child.get_end_datetime(),
             axis=child.axis,
-            min_shape=child.min_shape,
+            min_shape=child.shape,
             max_shape=child.max_shape,
             sample_rate=child.sample_rate,
         )
@@ -431,7 +431,7 @@ class TimeContentDatasetComponent(ContentDatasetComponent):
         for i, child_ref in enumerate(child_refs):
             if child_ref:
                 child = self.composite[child_ref].components["tree_node"]
-                min_shape = child.min_shape
+                min_shape = child.shape
                 max_shape = child.max_shape
 
                 self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.mins_name)

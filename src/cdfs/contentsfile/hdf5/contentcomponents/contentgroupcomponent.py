@@ -324,7 +324,7 @@ class ContentGroupComponent(NodeGroupComponent):
 
             self.node_map.components[self.node_component_name].set_entry(
                 index=index,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
         else:
@@ -396,7 +396,7 @@ class ContentGroupComponent(NodeGroupComponent):
 
             self.node_map.components[self.node_component_name].set_entry(
                 index=index,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
 
@@ -458,6 +458,6 @@ class ContentGroupComponent(NodeGroupComponent):
 
             self.node_map.components[self.node_component_name].set_entry(
                 index=index,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )

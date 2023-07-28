@@ -13,7 +13,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .basetable import BaseTable
-from .basemetainformationtable import BaseMetaInformationTable
-from .basecontentstable import BaseContentsTable
-from .basetimecontentstable import BaseTimeContentsTable
+from .contentsfile import ContentsFileAsyncSchema, ContentsTable, ContentsFile
+from .timecontentsfile import TimeContentsFileAsyncSchema, TimeContentsTable, TimeContentsFile

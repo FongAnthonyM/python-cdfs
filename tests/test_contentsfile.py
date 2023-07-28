@@ -21,7 +21,6 @@ import pathlib
 from typing import Any
 
 # Third-Party Packages #
-from taskblocks import TaskBlock
 import pytest
 
 # Local Packages #
@@ -38,12 +37,34 @@ def tmp_dir(tmpdir):
 
 # Classes #
 class TestContentsFile:
+    class_ = ContentsFile
 
-    async def create_contents_file(self, path):
-        db = ContentsFile(path=path)
+    async def create_contents_file_async(self, path):
+        db = self.class_(path=path)
         await db.create_file_async()
 
-    def test_async_contents_file(self, tmp_path):
+    def test_create_contents_file(self, tmp_path):
         file_path = pathlib.Path.cwd() / "test.db"
-        asyncio.run(self.create_contents_file(path=file_path))
+        db = self.class_(path=file_path)
+        db.create_file(echo=True)
         assert file_path.is_file()
+
+    def test_create_async_contents_file(self, tmp_path):
+        file_path = pathlib.Path.cwd() / "test.db"
+        asyncio.run(self.create_contents_file_async(path=file_path))
+        assert file_path.is_file()
+
+    def test_load_empty_meta_information(self, tmp_path):
+        file_path = tmp_path / "test.db"
+        db = self.class_(path=file_path, open_=True, create=True)
+        info = db.load_meta_information()
+        assert not info
+
+    def test_load_meta_information(self, tmp_path):
+        file_path = tmp_path / "test.db"
+        db = self.class_(path=file_path, open_=True, create=True)
+        with db.create_session() as session:
+            db.meta_information_table.insert(session=session, as_entry=True, update_id=1)
+        info = db.load_meta_information()
+        assert "id_" in info
+        assert db._meta_information.id == info["id_"]
