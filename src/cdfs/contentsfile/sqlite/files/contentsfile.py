@@ -61,20 +61,24 @@ class ContentsFile(BaseObject):
         path: str | pathlib.Path | None = None,
         open_: bool = False,
         create: bool = False,
-        async_: bool = False,
         init: bool = True,
         **kwargs,
     ) -> None:
+        # New Attributes #
         self._path: pathlib.Path | None = None
-        self._is_async: bool = False
 
-        self.engine: Engine | AsyncEngine | None = None
+        self.engine: Engine | None = None
+        self.async_engine: AsyncEngine | None = None
         self._async_session_maker: async_sessionmaker | None = None
 
         self._meta_information: BaseMetaInformationTable | None = None
 
+        # Parent Attributes #
+        super().__init__()
+
+        # Object Construction #
         if init:
-            self.construct(path=path, open_=open_, create=create, async_=async_, **kwargs)
+            self.construct(path=path, open_=open_, create=create, **kwargs)
 
     @property
     def path(self) -> pathlib.Path:
@@ -93,20 +97,6 @@ class ContentsFile(BaseObject):
         return self.engine is not None
 
     @property
-    def is_async(self) -> bool:
-        if self.engine is not None:
-            return isinstance(self.engine, AsyncEngine)
-        else:
-            return self._is_async
-
-    @is_async.setter
-    def is_async(self, value: bool) -> None:
-        if self.engine is None:
-            self._is_async = value
-        else:
-            raise RuntimeError("Cannot change async mode while file is open.")
-
-    @property
     def async_session_maker(self) -> async_sessionmaker | None:
         if self._async_session_maker is None:
             self._async_session_maker = async_sessionmaker(self.engine)
@@ -123,7 +113,6 @@ class ContentsFile(BaseObject):
         path: str | pathlib.Path | None = None,
         open_: bool = False,
         create: bool = False,
-        async_: bool = False,
         **kwargs,
     ) -> None:
         if path is not None:
@@ -134,21 +123,18 @@ class ContentsFile(BaseObject):
             self.close()
 
         if open_:
-            self.open(async_=async_, **kwargs)
+            self.open(**kwargs)
 
-    def create_engine(self, async_: bool = False, **kwargs) -> Engine | AsyncEngine:
-        if async_:
-            self.engine = create_async_engine(f"sqlite+aiosqlite:///{self._path.as_posix()}", **kwargs)
-        else:
-            self.engine = create_engine(f"sqlite:///{self._path.as_posix()}", **kwargs)
-        return self.engine
+    def create_engine(self, **kwargs) -> None:
+        self.engine = create_engine(f"sqlite:///{self._path.as_posix()}", **kwargs)
+        self.async_engine = create_async_engine(f"sqlite+aiosqlite:///{self._path.as_posix()}", **kwargs)
 
     def create_file(self, path: str | pathlib.Path | None = None, **kwargs) -> None:
         if path is not None:
             self.path = path
 
-        if self.engine is None or path is not None:
-            self.create_engine(async_=False, **kwargs)
+        if self.async_engine is None or path is not None:
+            self.create_engine(**kwargs)
 
         self.schema.metadata.create_all(self.engine)
 
@@ -156,32 +142,35 @@ class ContentsFile(BaseObject):
         if path is not None:
             self.path = path
 
-        if self.engine is None or path is not None:
-            self.create_engine(async_=True, **kwargs)
+        if self.async_engine is None or path is not None:
+            self.create_engine(**kwargs)
 
-        async with self.engine.begin() as conn:
+        async with self.async_engine.begin() as conn:
             await conn.run_sync(self.schema.metadata.create_all)
 
     def create_session(self) -> Session:
         return Session(self.engine)
 
     def create_async_session_maker(self, **kwargs) -> async_sessionmaker:
-        self._async_session_maker = async_sessionmaker(self.engine, **kwargs)
+        self._async_session_maker = async_sessionmaker(self.async_engine, **kwargs)
         return self._async_session_maker
 
-    def open(self, async_: bool = False, **kwargs) -> "ContentsFile":
-        self.create_engine(async_=async_, **kwargs)
+    def open(self,  **kwargs) -> "ContentsFile":
+        self.create_engine(**kwargs)
         return self
 
     def close(self) -> bool:
         self.engine.dispose()
         self.engine = None
+        self.async_engine = None
         self._async_session_maker = None
         return self.engine is None
 
     async def close_async(self) -> bool:
-        await self.engine.dispose()
+        self.engine.dispose()
+        await self.async_engine.dispose()
         self.engine = None
+        self.async_engine = None
         self._async_session_maker = None
         return self.engine is None
 

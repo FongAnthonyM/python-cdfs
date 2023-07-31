@@ -24,7 +24,8 @@ from framestructure import DirectoryTimeFrameInterface
 from hdf5objects import HDF5File, HDF5Group
 
 # Local Packages #
-from ..contentsfile import TimeContentsFile, TimeContentsFrame, BaseContentsTable
+from ..contentsfile import TimeContentsFile, BaseContentsTable
+from ..frames import TimeContentsFrame
 
 
 # Definitions #

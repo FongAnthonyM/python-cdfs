@@ -218,17 +218,25 @@ class BaseTable:
         cls,
         session: Session,
         entry: dict[str, Any] | None = None,
+        primary_keys: Iterable[str] = ("id_",),
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
         entry.update(kwargs)
+        primary_keys = {n: entry[n] for n in primary_keys}
         if begin:
             with session.begin():
-                item = session.get(cls, entry.pop("id_"))
-                item.update(entry)
+                item = session.get(cls, primary_keys)
+                if item is None:
+                    cls.insert(session=session, entry=entry, as_entry=True)
+                else:
+                    item.update(entry)
         else:
-            item = session.get(cls, entry.pop("id_"))
-            item.update(entry)
+            item = session.get(cls, primary_keys)
+            if item is None:
+                cls.insert(session=session, entry=entry, as_entry=True)
+            else:
+                item.update(entry)
 
     @singlekwargdispatch(kwarg="session")
     @classmethod
@@ -236,6 +244,7 @@ class BaseTable:
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
         entry: dict[str, Any] | None = None,
+        primary_keys: Iterable[str] = ("id_",),
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -247,14 +256,19 @@ class BaseTable:
         cls,
         session: async_sessionmaker[AsyncSession],
         entry: dict[str, Any] | None = None,
+        primary_keys: Iterable[str] = ("id_",),
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
         entry.update(kwargs)
+        primary_keys = {n: entry[n] for n in primary_keys}
         async with session() as async_session:
             async with async_session.begin():
-                item = await session.get(cls, entry.pop("id_"))
-                item.update(entry)
+                item = await session.get(cls, primary_keys)
+                if item is None:
+                    await cls.insert_async(session=session, entry=entry, as_entry=True)
+                else:
+                    item.update(entry)
 
     @update_entry_async.register(AsyncSession)
     @classmethod
@@ -262,34 +276,49 @@ class BaseTable:
         cls,
         session: AsyncSession,
         entry: dict[str, Any] | None = None,
+        primary_keys: Iterable[str] = ("id_",),
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
         entry.update(kwargs)
+        primary_keys = {n: entry[n] for n in primary_keys}
         if begin:
             async with session.begin():
-                item = await session.get(cls, entry.pop("id_"))
-                item.update(entry)
+                item = await session.get(cls, primary_keys)
+                if item is None:
+                    await cls.insert_async(session=session, entry=entry, as_entry=True)
+                else:
+                    item.update(entry)
         else:
-            item = await session.get(cls, entry.pop("id_"))
-            item.update(entry)
+            item = await session.get(cls, primary_keys)
+            if item is None:
+                await cls.insert_async(session=session, entry=entry, as_entry=True)
+            else:
+                item.update(entry)
 
     @classmethod
     def update_entries(
         cls,
         session: Session,
         entries: Iterable[dict[str, Any]] | None = None,
+        primary_keys: Iterable[str] = ("id_",),
         begin: bool = False,
     ) -> None:
         if begin:
             with session.begin():
                 for entry in entries:
-                    item = session.get(cls, entry.pop("id_"))
-                    item.update(entry)
+                    item = session.get(cls, {n: entry[n] for n in primary_keys})
+                    if item is None:
+                        cls.insert(session=session, entry=entry, as_entry=True)
+                    else:
+                        item.update(entry)
         else:
             for entry in entries:
-                item = session.get(cls, entry.pop("id_"))
-                item.update(entry)
+                item = session.get(cls, {n: entry[n] for n in primary_keys})
+                if item is None:
+                    cls.insert(session=session, entry=entry, as_entry=True)
+                else:
+                    item.update(entry)
 
     @singlekwargdispatch(kwarg="session")
     @classmethod
@@ -297,6 +326,7 @@ class BaseTable:
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
         entries: Iterable[dict[str, Any]] | None = None,
+        primary_keys: Iterable[str] = ("id_",),
         begin: bool = False,
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
@@ -307,13 +337,17 @@ class BaseTable:
         cls,
         session: async_sessionmaker[AsyncSession],
         entries: Iterable[dict[str, Any]] | None = None,
+        primary_keys: Iterable[str] = ("id_",),
         begin: bool = False,
     ) -> None:
         async with session() as async_session:
             async with async_session.begin():
                 for entry in entries:
-                    item = await session.get(cls, entry.pop("id_"))
-                    item.update(entry)
+                    item = await session.get(cls, {n: entry[n] for n in primary_keys})
+                    if item is None:
+                        await cls.insert_async(session=session, entry=entry, as_entry=True)
+                    else:
+                        item.update(entry)
 
     @update_entries_async.register(AsyncSession)
     @classmethod
@@ -321,17 +355,24 @@ class BaseTable:
         cls,
         session: AsyncSession,
         entries: Iterable[dict[str, Any]] | None = None,
+        primary_keys: Iterable[str] = ("id_",),
         begin: bool = False,
     ) -> None:
         if begin:
             async with session.begin():
                 for entry in entries:
-                    item = await session.get(cls, entry.pop("id_"))
-                    item.update(entry)
+                    item = await session.get(cls, {n: entry[n] for n in primary_keys})
+                    if item is None:
+                        await cls.insert_async(session=session, entry=entry, as_entry=True)
+                    else:
+                        item.update(entry)
         else:
             for entry in entries:
-                item = await session.get(cls, entry.pop("id_"))
-                item.update(entry)
+                item = await session.get(cls, {n: entry[n] for n in primary_keys})
+                if item is None:
+                    await cls.insert_async(session=session, entry=entry, as_entry=True)
+                else:
+                    item.update(entry)
 
     @classmethod
     def delete_item(

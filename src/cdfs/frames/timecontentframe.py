@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ....header import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -28,7 +28,7 @@ from framestructure import DirectoryTimeFrameInterface, FileTimeContainerInterfa
 import numpy as np
 
 # Local Packages #
-from ..files import TimeContentsFile
+from ..contentsfile.sqlite import TimeContentsFile
 
 
 # Definitions #

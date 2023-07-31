@@ -34,9 +34,9 @@ class BaseMetaInformationTable(BaseTable):
     # Class Methods #
     @classmethod
     def get_information(
-        cls, 
-        session: Session, 
-        as_entry: bool = True,
+cls,
+session: Session,
+as_entry: bool = True,
     ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
         result = session.execute(lambda_stmt(lambda: select(cls))).scalar()
         return (result.as_entry() if as_entry else result) if result is not None else {}
@@ -44,9 +44,9 @@ class BaseMetaInformationTable(BaseTable):
     @singlekwargdispatch(kwarg="session")
     @classmethod
     async def get_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-        as_entry: bool = True,
+cls,
+session: async_sessionmaker[AsyncSession] | AsyncSession,
+as_entry: bool = True,
     ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
         raise TypeError(f"{type(session)} is not a valid type.")
 
