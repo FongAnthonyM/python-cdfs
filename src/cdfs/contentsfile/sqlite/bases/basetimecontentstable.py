@@ -129,6 +129,35 @@ class BaseTimeContentsTable(BaseContentsTable):
         offset, nanostamp_ = results.first()
         return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
+    @classmethod
+    def get_all_nanostamps(cls, session: Session) -> tuple[tuple[int, int, int], ...]:
+        statement = lambda_stmt(lambda: select(cls.start, cls.end, cls.tz_offset).order_by(cls.start))
+        return tuple(session.execute(statement))
+
+    @singlekwargdispatch(kwarg="session")
+    @classmethod
+    async def get_all_nanostamps_async(
+        cls,
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
+    ) -> tuple[tuple[int, int, int], ...]:
+        raise TypeError(f"{type(session)} is not a valid type.")
+
+    @get_all_nanostamps_async.register(async_sessionmaker)
+    @classmethod
+    async def _get_all_nanostamps_async(
+        cls,
+        session: async_sessionmaker[AsyncSession],
+    ) -> tuple[tuple[int, int, int], ...]:
+        statement = lambda_stmt(lambda: select(cls.start, cls.end, cls.tz_offset).order_by(cls.start))
+        async with session() as async_session:
+            return tuple(await async_session.execute(statement))
+
+    @get_all_nanostamps_async.register(AsyncSession)
+    @classmethod
+    async def _get_all_nanostamps_async(cls, session: AsyncSession) -> tuple[tuple[int, int, int], ...]:
+        statement = lambda_stmt(lambda: select(cls.start, cls.end, cls.tz_offset).order_by(cls.start))
+        return tuple(await session.execute(statement))
+
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
         dict_ = ({} if dict_ is None else dict_) | kwargs

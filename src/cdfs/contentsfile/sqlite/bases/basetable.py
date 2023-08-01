@@ -94,7 +94,7 @@ class BaseTable:
         **kwargs: Any,
     ) -> None:
         if as_entry:
-            item = cls.item_from_entry(**(entry | kwargs))
+            item = cls.item_from_entry(**(({} if entry is None else entry) | kwargs))
 
         if begin:
             with session.begin():
@@ -127,7 +127,7 @@ class BaseTable:
         **kwargs: Any,
     ) -> None:
         if as_entry:
-            item = cls.item_from_entry(**(entry | kwargs))
+            item = cls.item_from_entry(**(({} if entry is None else entry) | kwargs))
         async with session() as async_session:
             async with async_session.begin():
                 async_session.add(item)
@@ -144,7 +144,7 @@ class BaseTable:
         **kwargs: Any,
     ) -> None:
         if as_entry:
-            item = cls.item_from_entry(**(entry | kwargs))
+            item = cls.item_from_entry(**(({} if entry is None else entry) | kwargs))
 
         if begin:
             async with session.begin():

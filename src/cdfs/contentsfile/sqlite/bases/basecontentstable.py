@@ -18,7 +18,8 @@ from typing import Any
 import uuid
 
 # Third-Party Packages #
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, Session
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 # Local Packages #
@@ -55,7 +56,16 @@ class BaseContentsTable(BaseTable):
         return kwargs
 
     @classmethod
-    def correct_contents(cls, session, path: pathlib.Path) -> None:
+    def correct_contents(cls, session: Session, path: pathlib.Path, begin: bool = False) -> None:
+        raise NotImplementedError
+
+    @classmethod
+    async def correct_contents_async(
+        cls,
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
+        path: pathlib.Path,
+        begin: bool = False,
+    ) -> None:
         raise NotImplementedError
 
     # Instance Methods #

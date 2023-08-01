@@ -33,10 +33,85 @@ class BaseMetaInformationTable(BaseTable):
 
     # Class Methods #
     @classmethod
+    def create_information(
+        cls,
+        session: Session,
+        entry: dict[str, Any] | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        if begin:
+            with session.begin():
+                result = session.execute(lambda_stmt(lambda: select(cls))).scalar()
+                if result is None:
+                    cls.insert(session=session, entry=entry, as_entry=True, begin=False, **kwargs)
+                else:
+                    result.update(entry, **kwargs)
+        else:
+            result = session.execute(lambda_stmt(lambda: select(cls))).scalar()
+            if result is None:
+                cls.insert(session=session, entry=entry, as_entry=True, begin=False, **kwargs)
+            else:
+                result.update(entry, **kwargs)
+
+    @singlekwargdispatch(kwarg="session")
+    @classmethod
+    async def create_information_async(
+        cls,
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
+        entry: dict[str, Any] | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        raise TypeError(f"{type(session)} is not a valid type.")
+
+    @create_information_async.register(async_sessionmaker)
+    @classmethod
+    async def _create_information_async(
+        cls,
+        session: async_sessionmaker[AsyncSession],
+        entry: dict[str, Any] | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        statement = lambda_stmt(lambda: select(cls))
+        async with session() as async_session:
+            async with async_session.begin():
+                result = (await async_session.execute(statement)).scalar()
+                if result is None:
+                    await cls.insert_async(session=async_session, entry=entry, as_entry=True, begin=False, **kwargs)
+                else:
+                    result.update(entry, **kwargs)
+
+    @create_information_async.register(AsyncSession)
+    @classmethod
+    async def _create_information_async(
+        cls,
+        session: AsyncSession,
+        entry: dict[str, Any] | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        statement = lambda_stmt(lambda: select(cls))
+        if begin:
+            async with session.begin():
+                result = (await session.execute(statement)).scalar()
+                if result is None:
+                    await cls.insert_async(session=session, entry=entry, as_entry=True, begin=False, **kwargs)
+                else:
+                    result.update(entry, **kwargs)
+        else:
+            result = (await session.execute(statement)).scalar()
+            if result is None:
+                await cls.insert_async(session=session, entry=entry, as_entry=True, begin=False, **kwargs)
+            else:
+                result.update(entry, **kwargs)
+
+    @classmethod
     def get_information(
-cls,
-session: Session,
-as_entry: bool = True,
+        cls,
+        session: Session,
+        as_entry: bool = True,
     ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
         result = session.execute(lambda_stmt(lambda: select(cls))).scalar()
         return (result.as_entry() if as_entry else result) if result is not None else {}
@@ -44,9 +119,9 @@ as_entry: bool = True,
     @singlekwargdispatch(kwarg="session")
     @classmethod
     async def get_information_async(
-cls,
-session: async_sessionmaker[AsyncSession] | AsyncSession,
-as_entry: bool = True,
+        cls,
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
+        as_entry: bool = True,
     ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
         raise TypeError(f"{type(session)} is not a valid type.")
 
@@ -72,4 +147,59 @@ as_entry: bool = True,
     ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
         result = (await session.execute(lambda_stmt(lambda: select(cls)))).scalar()
         return (result.as_entry() if as_entry else result) if result is not None else {}
-    
+
+    @classmethod
+    def set_information(
+        cls,
+        session: Session,
+        entry: dict[str, Any] | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        if begin:
+            with session.begin():
+                session.execute(lambda_stmt(lambda: select(cls))).scalar().update(entry, **kwargs)
+        else:
+            session.execute(lambda_stmt(lambda: select(cls))).scalar().update(entry, **kwargs)
+
+    @singlekwargdispatch(kwarg="session")
+    @classmethod
+    async def set_information_async(
+        cls,
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
+        entry: dict[str, Any] | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        raise TypeError(f"{type(session)} is not a valid type.")
+
+    @set_information_async.register(async_sessionmaker)
+    @classmethod
+    async def _set_information_async(
+        cls,
+        session: async_sessionmaker[AsyncSession],
+        entry: dict[str, Any] | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        statement = lambda_stmt(lambda: select(cls))
+        async with session() as async_session:
+            async with async_session.begin():
+                (await async_session.execute(statement)).scalar().update(entry, **kwargs)
+
+    @set_information_async.register(AsyncSession)
+    @classmethod
+    async def _set_information_async(
+        cls,
+        session: AsyncSession,
+        entry: dict[str, Any] | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        statement = lambda_stmt(lambda: select(cls))
+        if begin:
+            async with session.begin():
+                (await session.execute(statement)).scalar().update(entry, **kwargs)
+        else:
+            (await session.execute(statement)).scalar().update(entry, **kwargs)
+            

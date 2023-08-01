@@ -1,4 +1,4 @@
-"""timecontentframe.py
+"""timecontentsproxy.py
 
 """
 # Package Header #
@@ -24,7 +24,7 @@ from warnings import warn
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
 from dspobjects.time import Timestamp, nanostamp
-from framestructure import DirectoryTimeFrameInterface, FileTimeContainerInterface, DirectoryTimeFrame
+from proxyarrays import BaseContainerFileTimeSeries, BaseDirectoryTimeSeries, DirectoryTimeSeriesProxy
 import numpy as np
 
 # Local Packages #
@@ -33,7 +33,7 @@ from ..contentsfile.sqlite import TimeContentsFile
 
 # Definitions #
 # Classes #
-class TimeContentsLeafContainerInterface(FileTimeContainerInterface):
+class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
     file_type: type | None = None
 
     # Magic Methods #
@@ -95,41 +95,41 @@ class TimeContentsLeafContainerInterface(FileTimeContainerInterface):
 
     @property
     def start_datetime(self) -> Timestamp | None:
-        """The start datetime of this frame."""
+        """The start datetime of this proxy."""
         start = self.get_start_nanostamp()
         return Timestamp.fromnanostamp(start, tz=self.tzinfo) if start is not None else None
 
     @property
     def start_nanostamp(self) -> int | None:
-        """The start timestamp of this frame."""
+        """The start timestamp of this proxy."""
         return self.get_start_nanostamp()
 
     @property
     def start_timestamp(self) -> float | None:
-        """The start timestamp of this frame."""
+        """The start timestamp of this proxy."""
         start = self.get_start_nanostamp()
         return float(start) / 10**9 if start is not None else None
 
     @property
     def end_datetime(self) -> Timestamp | None:
-        """The end datetime of this frame."""
+        """The end datetime of this proxy."""
         end = self.get_end_nanostamp()
         return Timestamp.fromnanostamp(end, tz=self.tzinfo) if end is not None else None
 
     @property
     def end_nanostamp(self) -> float | None:
-        """The end timestamp of this frame."""
+        """The end timestamp of this proxy."""
         return self.get_end_nanostamp()
 
     @property
     def end_timestamp(self) -> float | None:
-        """The end timestamp of this frame."""
+        """The end timestamp of this proxy."""
         end = self.get_end_nanostamp()
         return float(end) / 10 ** 9 if end is not None else None
 
     @property
     def sample_period(self) -> float:
-        """The sample period of this frame."""
+        """The sample period of this proxy."""
         return self.get_sample_period()
 
     @sample_period.setter
@@ -158,15 +158,15 @@ class TimeContentsLeafContainerInterface(FileTimeContainerInterface):
 
         Args:
             file: The file object to wrap or a path to the file.
-            shape: The shape of this frame.
-            axis: The axis of the data which this frame extends for the contained data frames.
+            shape: The shape of this proxy.
+            axis: The axis of the data which this proxy extends for the contained data arrays.
             sample_rate: The sample rate of the data.
-            sample_period: The sample period of this frame.
-            start: The start of this frame.
-            end: The end of this frame.
-            precise: Determines if this frame returns nanostamps (True) or timestamps (False).
+            sample_period: The sample period of this proxy.
+            start: The start of this proxy.
+            end: The end of this proxy.
+            precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
             tzinfo: The time zone of the timestamps.
-            mode: The mode this frame and file will be in.
+            mode: The mode this proxy and file will be in.
             **kwargs: The keyword arguments for constructing the file object.
         """
         if shape is not None:
@@ -200,10 +200,10 @@ class TimeContentsLeafContainerInterface(FileTimeContainerInterface):
 
     @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_shape(self, **kwargs) -> tuple[int]:
-        """Get the minimum shapes from the contained frames/objects if they are different across axes.
+        """Get the minimum shapes from the contained arrays/objects if they are different across axes.
 
         Returns:
-            The minimum shapes of the contained frames/objects.
+            The minimum shapes of the contained arrays/objects.
         """
         if self.is_open():
             self._shape = self._get_shape()
@@ -213,41 +213,41 @@ class TimeContentsLeafContainerInterface(FileTimeContainerInterface):
         return self.time_axis.get_sample_rate_decimal()
 
     def get_sample_rate_decimal(self) -> Decimal | None:
-        """Get the sample rate of this frame from the contained frames/objects.
+        """Get the sample rate of this proxy from the contained arrays/objects.
 
         Returns:
-            The shape of this frame or the minimum sample rate of the contained frames/objects.
+            The shape of this proxy or the minimum sample rate of the contained arrays/objects.
         """
         if self.is_open():
             self._shape = self._get_sample_rate_decmial()
         return self._sample_rate
 
     def get_sample_rate(self) -> float | None:
-        """Get the sample rate of this frame from the contained frames/objects.
+        """Get the sample rate of this proxy from the contained arrays/objects.
 
         Returns:
-            The sample rate of this frame.
+            The sample rate of this proxy.
         """
         sample_rate = self.get_sample_rate_decimal()
         return float(sample_rate) if sample_rate is not None else None
 
     def get_sample_period(self) -> float:
-        """Get the sample period of this frame.
+        """Get the sample period of this proxy.
 
-        If the contained frames/object are different this will raise a warning and return the maximum period.
+        If the contained arrays/object are different this will raise a warning and return the maximum period.
 
         Returns:
-            The sample period of this frame.
+            The sample period of this proxy.
         """
         return float(1 / self.get_sample_rate_decimal())
 
     def get_sample_period_decimal(self) -> Decimal:
-        """Get the sample period of this frame.
+        """Get the sample period of this proxy.
 
-        If the contained frames/object are different this will raise a warning and return the maximum period.
+        If the contained arrays/object are different this will raise a warning and return the maximum period.
 
         Returns:
-            The sample period of this frame.
+            The sample period of this proxy.
         """
         return 1 / self.get_sample_rate_decimal()
 
@@ -255,7 +255,7 @@ class TimeContentsLeafContainerInterface(FileTimeContainerInterface):
         return self.time_axis.tzinfo
 
     def get_tzinfo(self) -> datetime.tzinfo | None:
-        """Gets the time zone of the contained frames.
+        """Gets the time zone of the contained arrays.
 
         Args:
             tzinfo: The time zone to set.
@@ -325,16 +325,16 @@ class TimeContentsLeafContainerInterface(FileTimeContainerInterface):
             raise IOError("not writable")
 
 
-class TimeContentsNodeFrame(DirectoryTimeFrame):
+class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
     default_node_type: type = None
-    default_leaf_type: type = None
+    default_leaf_type: type[BaseTimeContentsLeafContainer] | None = None
 
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        frames: Iterable[DirectoryTimeFrameInterface] | None = None,
+        proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         axis: int | None = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
@@ -347,7 +347,7 @@ class TimeContentsNodeFrame(DirectoryTimeFrame):
     ) -> None:
         # New Attributes #
         self.node_type: type | None = self.default_node_type
-        self.leaf_types: type | None = self.default_leaf_type
+        self.leaf_type: type | None = self.default_leaf_type
 
         # Parent Attributes #
         super().__init__(init=False)
@@ -356,7 +356,7 @@ class TimeContentsNodeFrame(DirectoryTimeFrame):
         if init:
             self.construct(
                 path=path,
-                frames=frames,
+                proxies=proxies,
                 axis=axis,
                 precise=precise,
                 tzinfo=tzinfo,
@@ -373,39 +373,39 @@ class TimeContentsNodeFrame(DirectoryTimeFrame):
         open_: bool = False,
         **kwargs
     ) -> None:
-        """Creates a child frame from the given child path.
+        """Creates a child proxy from the given child path.
 
         Args:
-            path: The child path to create a frame from.
-            open_: Determines if the frames will remain open after construction.
-            **kwargs: The keyword arguments to create contained frames.
+            path: The child path to create a proxy from.
+            open_: Determines if the arrays will remain open after construction.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         path = path.split('/') if isinstance(path, str) else path.copy()
 
         child_path = self.path / path.pop(0)
-        frame = self.frame_paths.get(child_path, None)
-        if frame is None:
+        proxy = self.proxy_paths.get(child_path, None)
+        if proxy is None:
             if path:
-                frame = self.node_type(path=child_path, open_=open_)
+                proxy = self.node_type(path=child_path, open_=open_)
             else:
-                frame = self.leaf_type(path=child_path, open_=open_, **kwargs)
-            self.frames.append(frame)
-            self.frame_paths[child_path] = frame
+                proxy = self.leaf_type(path=child_path, open_=open_, **kwargs)
+            self.proxies.append(proxy)
+            self.proxy_paths[child_path] = proxy
 
         if path:
-            frame.create_child(path=path, open_=open_, **kwargs)
+            proxy.create_child(path=path, open_=open_, **kwargs)
 
-        self.frames.sort(key=lambda f: f.start_timestamp)
+        self.proxies.sort(key=lambda f: f.start_timestamp)
         self.clear_caches()
 
     def update_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs) -> None:
-        """Creates child frames the given child paths.
+        """Creates child arrays the given child paths.
 
         Args:
-            paths: The child paths and keyword arguments to create frames from.
-            open_: Determines if the frames will remain open after construction.
-            sort: Determines if the frames will be sorted after update.
-            **kwargs: The keyword arguments to create contained frames.
+            paths: The child paths and keyword arguments to create arrays from.
+            open_: Determines if the arrays will remain open after construction.
+            sort: Determines if the arrays will be sorted after update.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         children_info = {}
         for path_kwargs in paths:
@@ -419,47 +419,46 @@ class TimeContentsNodeFrame(DirectoryTimeFrame):
                 info["children"].append(path_kwargs)
 
         for child_path, info in children_info.items():
-            frame = self.frame_paths.get(child_path, None)
-            if frame is None:
+            proxy = self.proxy_paths.get(child_path, None)
+            if proxy is None:
                 if info["children"]:
-                    frame = self.node_type(path=child_path, open_=open_)
+                    self.proxy_paths[child_path] = proxy = self.node_type(path=child_path, open_=open_)
                 else:
-                    frame = self.leaf_type(**(kwargs | info["kwargs"]))
-                self.frames.append(frame)
-                self.frame_paths[child_path] = frame
+                    self.proxy_paths[child_path] = proxy = self.leaf_type(**(kwargs | info["kwargs"]))
+                self.proxies.append(proxy)
             if info["children"]:
-                frame.create_children(paths=info["children"], open_=open_)
+                proxy.create_children(paths=info["children"], open_=open_)
             else:
-                frame.update_defaults(**info["kwargs"])
+                proxy.update_defaults(**info["kwargs"])
 
         if sort:
-            self.frames.sort(key=lambda f: f.start_timestamp)
+            self.proxies.sort(key=lambda f: f.start_timestamp)
             self.clear_caches()
 
 
-class TimeContentsFrame(TimeContentsNodeFrame):
-    """A DirectoryTimeFrame object built with information from a dataset which maps out its contents.
+class TimeContentsProxy(TimeContentsNodeProxy):
+    """A DirectoryTimeproxy object built with information from a dataset which maps out its contents.
 
     Class Attributes:
-        default_node_frame_type: The default frame type to create when making a node.
+        default_node_proxy_type: The default proxy type to create when making a node.
 
     Attributes:
-        content_map: A HDF5Group with the mapping information for creating the frame structure.
-        node_frame_type: The frame type to create when making a node.
+        content_map: A HDF5Group with the mapping information for creating the proxy structure.
+        node_proxy_type: The proxy type to create when making a node.
 
     Args:
-        path: The path for this frame to wrap.
-        content_map: A HDF5Dataset with the mapping information for creating the frame structure.
-        frames: An iterable holding frames/objects to store in this frame.
-        mode: Determines if the contents of this frame are editable or not.
-        update: Determines if this frame will start_timestamp updating or not.
-        open_: Determines if the frames will remain open after construction.
-        build: Determines if the frames will be constructed.
-        **kwargs: The keyword arguments to create contained frames.
+        path: The path for this proxy to wrap.
+        content_map: A HDF5Dataset with the mapping information for creating the proxy structure.
+        proxies: An iterable holding arrays/objects to store in this proxy.
+        mode: Determines if the contents of this proxy are editable or not.
+        update: Determines if this proxy will start_timestamp updating or not.
+        open_: Determines if the arrays will remain open after construction.
+        build: Determines if the arrays will be constructed.
+        **kwargs: The keyword arguments to create contained arrays.
         init: Determines if this object will construct.
     """
-    default_frame_type: type = TimeContentsNodeFrame
-    default_node_type: type = TimeContentsNodeFrame
+    default_proxy_type: type = TimeContentsNodeProxy
+    default_node_type: type[TimeContentsNodeProxy] = TimeContentsNodeProxy
 
     # Magic Methods #
     # Construction/Destruction
@@ -467,7 +466,7 @@ class TimeContentsFrame(TimeContentsNodeFrame):
         self,
         path: pathlib.Path | str | None = None,
         contents_file: TimeContentsFile | None = None,
-        frames: Iterable[DirectoryTimeFrameInterface] | None = None,
+        proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "r",
         update: bool = False,
         open_: bool = False,
@@ -487,7 +486,7 @@ class TimeContentsFrame(TimeContentsNodeFrame):
             self.construct(
                 path=path,
                 contents_file=contents_file,
-                frames=frames,
+                proxies=proxies,
                 mode=mode,
                 update=update,
                 open_=open_,
@@ -501,7 +500,7 @@ class TimeContentsFrame(TimeContentsNodeFrame):
         self,
         path: pathlib.Path | str | None = None,
         contents_file: TimeContentsFile | None = None,
-        frames: Iterable[DirectoryTimeFrameInterface] | None = None,
+        proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "r",
         update: bool = False,
         open_: bool = False,
@@ -511,28 +510,28 @@ class TimeContentsFrame(TimeContentsNodeFrame):
         """Constructs this object.
 
         Args:
-            path: The path for this frame to wrap.
-            content_map: A HDF5Dataset with the mapping information for creating the frame structure.
-            frames: An iterable holding frames/objects to store in this frame.
-            mode: Determines if the contents of this frame are editable or not.
-            update: Determines if this frame will start_timestamp updating or not.
-            open_: Determines if the frames will remain open after construction.
-            build: Determines if the frames will be constructed.
-            **kwargs: The keyword arguments to create contained frames.
+            path: The path for this proxy to wrap.
+            contents_file: A HDF5Dataset with the mapping information for creating the proxy structure.
+            proxies: An iterable holding arrays/objects to store in this proxy.
+            mode: Determines if the contents of this proxy are editable or not.
+            update: Determines if this proxy will start_timestamp updating or not.
+            open_: Determines if the arrays will remain open after construction.
+            build: Determines if the arrays will be constructed.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         if contents_file is not None:
             self.contents_file = contents_file
 
-        super().construct(path=path, frames=frames, mode=mode, update=update, open_=open_, build=build, **kwargs)
+        super().construct(path=path, proxies=proxies, mode=mode, update=update, open_=open_, build=build, **kwargs)
 
-    def construct_frames(self, open_=False, **kwargs) -> None:
-        """Constructs the frames for this object.
+    def construct_proxies(self, open_=False, **kwargs) -> None:
+        """Constructs the arrays for this object.
 
         Args:
-            open_: Determines if the frames will remain open after construction.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after construction.
+            **kwargs: The keyword arguments to create contained arrays.
         """
-        self.frame_paths.clear()
+        self.proxy_paths.clear()
         with self.contents_file.create_session() as session:
             entries = self.contents_file.contents.get_all(session=session, as_entries=True)
 
@@ -544,16 +543,16 @@ class TimeContentsFrame(TimeContentsNodeFrame):
 
         self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
-    async def construct_frames_async(self, open_=False, **kwargs) -> None:
-        """Constructs the frames for this object.
+    async def construct_proxies_async(self, open_=False, **kwargs) -> None:
+        """Constructs the arrays for this object.
 
         Args:
-            open_: Determines if the frames will remain open after construction.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after construction.
+            **kwargs: The keyword arguments to create contained arrays.
         """
-        self.frame_paths.clear()
+        self.proxy_paths.clear()
         entries = await self.contents_file.contents.get_all_async(
-            session=self.contents_file.async_sessionmaker,
+            session=self.contents_file.async_session_maker,
             as_entries=True,
         )
 
@@ -565,12 +564,12 @@ class TimeContentsFrame(TimeContentsNodeFrame):
 
         self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
-    def update_frames(self, open_=False, **kwargs) -> None:
-        """Updates the frames for this object.
+    def update_proxies(self, open_=False, **kwargs) -> None:
+        """Updates the arrays for this object.
 
         Args:
-            open_: Determines if the frames will remain open after the update.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after the update.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         with self.contents_file.create_session() as session:
             entries = self.contents_file.contents.get_from_update(
@@ -589,12 +588,12 @@ class TimeContentsFrame(TimeContentsNodeFrame):
 
             self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
-    async def update_frames_async(self, open_=False, **kwargs) -> None:
-        """Updates the frames for this object.
+    async def update_proxies_async(self, open_=False, **kwargs) -> None:
+        """Updates the arrays for this object.
 
         Args:
-            open_: Determines if the frames will remain open after the update.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after the update.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         entries = await self.contents_file.contents.get_from_update_async(
             session=self.contents_file.async_sessionmaker,

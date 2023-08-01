@@ -13,4 +13,4 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .timecontentframe import TimeContentsLeafContainerInterface, TimeContentsNodeFrame, TimeContentsFrame
+from .timecontentsproxy import BaseTimeContentsLeafContainer, TimeContentsNodeProxy, TimeContentsProxy

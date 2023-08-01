@@ -44,6 +44,24 @@ def tmp_dir(tmpdir):
 class TestTimeContentsFile(TestContentsFile):
     class_ = TimeContentsFile
 
+    def insert_random_entryies(self, file, n_entries: int = 10):
+        time_contents = file.contents
+        with file.create_session() as session:
+            with session.begin():
+                for i in range(n_entries):
+                    time_contents.insert(
+                        session=session,
+                        as_entry=True,
+                        update_id=0,
+                        path="/example",
+                        axis=0,
+                        shape=(500, 100),
+                        timezone="local",
+                        start=datetime.datetime.now(),
+                        end=datetime.datetime.now(),
+                        sample_rate=1024,
+                    )
+
     async def insert_async(self, path):
         db = self.class_(path=path)
         await db.create_file_async(echo=True)
@@ -72,24 +90,31 @@ class TestTimeContentsFile(TestContentsFile):
     def test_get_start_datetime(self, tmp_path):
         file_path = tmp_path / "test.db"
         db = self.class_(path=file_path, open_=True, create=True)
-        time_contents = self.class_.contents
+        self.insert_random_entryies(db)
         with db.create_session() as session:
-            for i in range(10):
-                time_contents.insert(
-                    session=session,
-                    as_entry=True,
-                    update_id=0,
-                    path="/example",
-                    axis=0,
-                    shape=(500, 100),
-                    timezone="local",
-                    start=datetime.datetime.now(),
-                    end=datetime.datetime.now(),
-                    sample_rate=1024,
-                )
-            dt = time_contents.get_start_datetime(session=session)
+            dt = db.contents.get_start_datetime(session=session)
 
         assert file_path.is_file()
+
+    def test_get_end_datetime(self, tmp_path):
+        file_path = tmp_path / "test.db"
+        db = self.class_(path=file_path, open_=True, create=True)
+        self.insert_random_entryies(db)
+        with db.create_session() as session:
+            dt = db.contents.get_end_datetime(session=session)
+
+        assert file_path.is_file()
+
+    def test_get_all_nanostamps(self, tmp_path):
+        file_path = tmp_path / "test.db"
+        n_entries = 10
+        db = self.class_(path=file_path, open_=True, create=True)
+        self.insert_random_entryies(db, n_entries=n_entries)
+        with db.create_session() as session:
+            ns = db.contents.get_all_nanostamps(session=session)
+
+        assert file_path.is_file()
+        assert len(ns) == n_entries
 
 
 
