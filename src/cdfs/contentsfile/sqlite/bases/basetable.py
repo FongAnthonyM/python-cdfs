@@ -43,8 +43,8 @@ class BaseTable:
         return kwargs
 
     @classmethod
-    def item_from_entry(cls, **kwargs: Any) -> "BaseTable":
-        return cls(**cls.format_entry_kwargs(**kwargs))
+    def item_from_entry(cls, dict_: dict[str, Any] | None = None, /, **kwargs) -> "BaseTable":
+        return cls(**cls.format_entry_kwargs(**(({} if dict_ is None else dict_) | kwargs)))
 
     @classmethod
     def get_all(cls, session: Session, as_entries: bool = False) -> Result | list[dict[str, Any]]:
@@ -165,9 +165,9 @@ class BaseTable:
 
         if begin:
             with session.begin():
-                session.add(items)
+                session.add_all(items)
         else:
-            session.add(items)
+            session.add_all(items)
 
     @singlekwargdispatch(kwarg="session")
     @classmethod
@@ -214,25 +214,32 @@ class BaseTable:
             session.add_all(items)
 
     @classmethod
+    def _create_find_statement(cls, key: str, value: Any):
+        column = getattr(cls, key)
+        statement = lambda_stmt(lambda: select(cls))
+        statement += lambda s: s.where(column == value)
+        return statement
+
+    @classmethod
     def update_entry(
         cls,
         session: Session,
         entry: dict[str, Any] | None = None,
-        primary_keys: Iterable[str] = ("id_",),
+        key: str = "id_",
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
         entry.update(kwargs)
-        primary_keys = {n: entry[n] for n in primary_keys}
+        statement = cls._create_find_statement(key, entry[key])
         if begin:
             with session.begin():
-                item = session.get(cls, primary_keys)
+                item = session.execute(statement).scalar()
                 if item is None:
                     cls.insert(session=session, entry=entry, as_entry=True)
                 else:
                     item.update(entry)
         else:
-            item = session.get(cls, primary_keys)
+            item = session.execute(statement).scalar()
             if item is None:
                 cls.insert(session=session, entry=entry, as_entry=True)
             else:
@@ -244,7 +251,7 @@ class BaseTable:
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
         entry: dict[str, Any] | None = None,
-        primary_keys: Iterable[str] = ("id_",),
+        keys: str = "id_",
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -256,15 +263,15 @@ class BaseTable:
         cls,
         session: async_sessionmaker[AsyncSession],
         entry: dict[str, Any] | None = None,
-        primary_keys: Iterable[str] = ("id_",),
+        key: str = "id_",
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
         entry.update(kwargs)
-        primary_keys = {n: entry[n] for n in primary_keys}
+        statement = cls._create_find_statement(key, entry[key])
         async with session() as async_session:
             async with async_session.begin():
-                item = await session.get(cls, primary_keys)
+                item = (await async_session.execute(statement)).scalar()
                 if item is None:
                     await cls.insert_async(session=session, entry=entry, as_entry=True)
                 else:
@@ -276,21 +283,21 @@ class BaseTable:
         cls,
         session: AsyncSession,
         entry: dict[str, Any] | None = None,
-        primary_keys: Iterable[str] = ("id_",),
+        key: str = "id_",
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
         entry.update(kwargs)
-        primary_keys = {n: entry[n] for n in primary_keys}
+        statement = cls._create_find_statement(key, entry[key])
         if begin:
             async with session.begin():
-                item = await session.get(cls, primary_keys)
+                item = (await session.execute(statement)).scalar()
                 if item is None:
                     await cls.insert_async(session=session, entry=entry, as_entry=True)
                 else:
                     item.update(entry)
         else:
-            item = await session.get(cls, primary_keys)
+            item = (await session.execute(statement)).scalar()
             if item is None:
                 await cls.insert_async(session=session, entry=entry, as_entry=True)
             else:
@@ -301,24 +308,29 @@ class BaseTable:
         cls,
         session: Session,
         entries: Iterable[dict[str, Any]] | None = None,
-        primary_keys: Iterable[str] = ("id_",),
+        key: str = "id_",
         begin: bool = False,
     ) -> None:
+        items = []
         if begin:
             with session.begin():
                 for entry in entries:
-                    item = session.get(cls, {n: entry[n] for n in primary_keys})
+                    item = session.execute(cls._create_find_statement(key, entry[key])).scalar()
                     if item is None:
-                        cls.insert(session=session, entry=entry, as_entry=True)
+                        items.append(entry)
                     else:
                         item.update(entry)
+                if items:
+                    cls.insert_all(session=session, items=items, as_entries=True)
         else:
             for entry in entries:
-                item = session.get(cls, {n: entry[n] for n in primary_keys})
+                item = session.execute(cls._create_find_statement(key, entry[key])).scalar()
                 if item is None:
-                    cls.insert(session=session, entry=entry, as_entry=True)
+                    items.append(entry)
                 else:
                     item.update(entry)
+            if items:
+                cls.insert_all(session=session, items=items, as_entries=True)
 
     @singlekwargdispatch(kwarg="session")
     @classmethod
@@ -326,7 +338,7 @@ class BaseTable:
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
         entries: Iterable[dict[str, Any]] | None = None,
-        primary_keys: Iterable[str] = ("id_",),
+        key: str = "id_",
         begin: bool = False,
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
@@ -337,17 +349,20 @@ class BaseTable:
         cls,
         session: async_sessionmaker[AsyncSession],
         entries: Iterable[dict[str, Any]] | None = None,
-        primary_keys: Iterable[str] = ("id_",),
+        key: str = "id_",
         begin: bool = False,
     ) -> None:
+        items = []
         async with session() as async_session:
             async with async_session.begin():
                 for entry in entries:
-                    item = await session.get(cls, {n: entry[n] for n in primary_keys})
+                    item = (await async_session.execute(cls._create_find_statement(key, entry[key]))).scalar()
                     if item is None:
-                        await cls.insert_async(session=session, entry=entry, as_entry=True)
+                        items.append(entry)
                     else:
                         item.update(entry)
+                if items:
+                    await cls.insert_all_async(session=async_session, items=items, as_entries=True)
 
     @update_entries_async.register(AsyncSession)
     @classmethod
@@ -355,24 +370,29 @@ class BaseTable:
         cls,
         session: AsyncSession,
         entries: Iterable[dict[str, Any]] | None = None,
-        primary_keys: Iterable[str] = ("id_",),
+        key: str = "id_",
         begin: bool = False,
     ) -> None:
+        items = []
         if begin:
             async with session.begin():
                 for entry in entries:
-                    item = await session.get(cls, {n: entry[n] for n in primary_keys})
+                    item = (await session.execute(cls._create_find_statement(key, entry[key]))).scalar()
                     if item is None:
-                        await cls.insert_async(session=session, entry=entry, as_entry=True)
+                        items.append(entry)
                     else:
                         item.update(entry)
+                if items:
+                    await cls.insert_all_async(session=session, items=items, as_entries=True)
         else:
             for entry in entries:
-                item = await session.get(cls, {n: entry[n] for n in primary_keys})
+                item = (await session.execute(cls._create_find_statement(key, entry[key]))).scalar()
                 if item is None:
-                    await cls.insert_async(session=session, entry=entry, as_entry=True)
+                    items.append(entry)
                 else:
                     item.update(entry)
+            if items:
+                await cls.insert_all_async(session=session, items=items, as_entries=True)
 
     @classmethod
     def delete_item(
@@ -425,7 +445,7 @@ class BaseTable:
 
     @classmethod
     def get_last_update_id(cls, session: Session) -> int | None:
-        return session.execute(lambda_stmt(lambda: select(func.max(cls.update_id)))).one_or_none()
+        return session.execute(lambda_stmt(lambda: select(func.max(cls.update_id)))).one_or_none()[0]
 
     @singlekwargdispatch(kwarg="session")
     @classmethod
@@ -437,12 +457,12 @@ class BaseTable:
     async def _get_last_update_id_async(cls, session: async_sessionmaker[AsyncSession]) -> int | None:
         statement = lambda_stmt(lambda: select(func.max(cls.update_id)))
         async with session() as async_session:
-            return (await async_session.execute(statement)).one_or_none()
+            return (await async_session.execute(statement)).one_or_none()[0]
 
     @get_last_update_id_async.register(AsyncSession)
     @classmethod
     async def _get_last_update_id_async(cls, session: AsyncSession) -> int | None:
-        return (await session.execute(lambda_stmt(lambda: select(func.max(cls.update_id))))).one_or_none()
+        return (await session.execute(lambda_stmt(lambda: select(func.max(cls.update_id))))).one_or_none()[0]
 
     @classmethod
     def get_from_update(
@@ -513,7 +533,7 @@ class BaseTable:
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
         dict_ = ({} if dict_ is None else dict_) | kwargs
-        if update_id := dict_.get("update_id", None) is not None:
+        if (update_id := dict_.get("update_id", None)) is not None:
             self.update_id = update_id
 
     def as_dict(self) -> dict[str, Any]:

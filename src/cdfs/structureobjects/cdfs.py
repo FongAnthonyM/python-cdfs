@@ -14,6 +14,7 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from abc import abstractmethod
+import datetime
 import pathlib
 from typing import Any
 
@@ -71,6 +72,8 @@ class CDFS(CachingObject, BaseComposite):
 
         self.data_file_type: type = self.default_data_file_type
 
+        self._start_datetime: Timestamp | None = None
+        self._end_datetime: Timestamp | None = None
         self.data: TimeContentsProxy | None = None
 
         self.components: dict[str, Any] = {}
@@ -119,20 +122,18 @@ class CDFS(CachingObject, BaseComposite):
 
     @property
     def start_datetime(self):
-        try:
-            return self.get_start_datetime.caching_call()
-        except AttributeError:
+        if self._start_datetime is None or self.get_start_datetime.clear_condition():
             return self.get_start_datetime()
+        return self._start_datetime
 
     @property
     def end_datimetime(self):
-        try:
-            return self.get_end_datetime.caching_call()
-        except AttributeError:
+        if self._end_datetime is None or self.get_end_datetime.clear_condition():
             return self.get_end_datetime()
+        return self._end_datetime
 
     def __bool__(self) -> bool:
-        return bool(self.contents_file)
+        return self._is_open
 
     # Instance Methods #
     # Constructors/Destructors
@@ -227,24 +228,30 @@ class CDFS(CachingObject, BaseComposite):
         await self.contents_file.correct_contents_async(session=session, path=self.path if path is None else path)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
-    def get_start_datetime(self, session: Session | None = None) -> Timestamp:
-        return self.contents_file.get_start_datetime(session=session)
+    def get_start_datetime(self, session: Session | None = None) -> Timestamp | None:
+        self._start_datetime = self.contents_file.get_start_datetime(session=session)
+        return self._start_datetime
 
     async def get_start_datetime_async(
         self,
         session: async_sessionmaker[AsyncSession] | AsyncSession | None = None,
     ) -> Timestamp:
-        return await self.contents_file.get_start_datetime_async(session=session)
+        self._start_datetime = await self.contents_file.get_start_datetime_async(session=session)
+        self.get_start_datetime.refresh_expiration()
+        return self._start_datetime
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_datetime(self, session: Session | None = None) -> Timestamp:
-        return self.contents_file.get_end_datetime(session=session)
+        self._end_datetime = self.contents_file.get_end_datetime(session=session)
+        return self._end_datetime
 
     async def get_end_datetime_async(
         self,
         session: async_sessionmaker[AsyncSession] | AsyncSession | None = None,
     ) -> Timestamp:
-        return await self.contents_file.get_end_datetime_async(session=session)
+        self._end_datetime = await self.contents_file.get_end_datetime_async(session=session)
+        self.get_end_datetime.refresh_expiration()
+        return self._end_datetime_datetime
 
     def get_contents_nanostamps(self, session: Session | None = None) -> tuple[tuple[int, int, int], ...]:
         return self.contents_file.get_contents_nanostamps(session=session)
@@ -272,23 +279,39 @@ class CDFS(CachingObject, BaseComposite):
 
     def open(
         self,
+        mode: str | None = None,
         load: bool | None = None,
         create: bool = False,
         **kwargs: Any,
     ) -> None:
-        if not self.path.is_dir():
-            if create:
-                self.create(**kwargs)
-            else:
-                raise ValueError("Contents file does not exist.")
-        else:
-            self.open_contents_file(create=create, **kwargs)
-        self._is_open = True
+        if not self._is_open:
+            if mode is not None:
+                self._mode = mode
 
-        if load:
-            self.construct_data()
+            if not self.path.is_dir():
+                if create:
+                    self.create(**kwargs)
+                else:
+                    raise ValueError("Contents file does not exist.")
+            else:
+                self.open_contents_file(create=create, **kwargs)
+            self._is_open = True
+
+            if load:
+                self.construct_data()
 
     def close(self):
-        self.contents_file.close()
-        self.data.close()
+        if self.contents_file is not None:
+            self.contents_file.close()
+        if self.data is not None:
+            self.data.close()
         self._is_open = False
+        return True
+
+    async def close_async(self) -> bool:
+        if self.contents_file is not None:
+            await self.contents_file.close_async()
+        if self.data is not None:
+            self.data.close()
+        self._is_open = False
+        return True

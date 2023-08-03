@@ -76,58 +76,91 @@ class BaseTimeContentsTable(BaseContentsTable):
         return kwargs
 
     @classmethod
-    def get_start_datetime(cls, session: Session) -> Timestamp:
+    def get_start_datetime(cls, session: Session) -> Timestamp | None:
         offset, nanostamp_ = session.execute(lambda_stmt(lambda: select(cls.tz_offset, func.min(cls.start)))).first()
-        return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+        if nanostamp_ is None:
+            return None
+        elif offset is None:
+            return Timestamp.fromnanostamp(nanostamp_)
+        else:
+            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
     @singlekwargdispatch(kwarg="session")
     @classmethod
-    async def get_start_datetime_async(cls, session: async_sessionmaker[AsyncSession] | AsyncSession) -> Timestamp:
+    async def get_start_datetime_async(
+        cls,
+        session: async_sessionmaker[AsyncSession] | AsyncSession,
+    ) -> Timestamp | None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
     @get_start_datetime_async.register(async_sessionmaker)
     @classmethod
-    async def _get_start_datetime_async(cls, session: async_sessionmaker[AsyncSession]) -> Timestamp:
+    async def _get_start_datetime_async(cls, session: async_sessionmaker[AsyncSession]) -> Timestamp | None:
         statement = lambda_stmt(lambda: select(cls.tz_offset, func.min(cls.start)))
         async with session() as async_session:
             results = await async_session.execute(statement)
         
         offset, nanostamp_ = results.first()
-        return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+        if nanostamp_ is None:
+            return None
+        elif offset is None:
+            return Timestamp.fromnanostamp(nanostamp_)
+        else:
+            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
     @get_start_datetime_async.register(AsyncSession)
     @classmethod
-    async def _get_start_datetime_async(cls, session: AsyncSession) -> Timestamp:
+    async def _get_start_datetime_async(cls, session: AsyncSession) -> Timestamp | None:
         results = await session.execute(lambda_stmt(lambda: select(cls.tz_offset, func.min(cls.start))))
         offset, nanostamp_ = results.first()
-        return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+        if nanostamp_ is None:
+            return None
+        elif offset is None:
+            return Timestamp.fromnanostamp(nanostamp_)
+        else:
+            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
     @classmethod
-    def get_end_datetime(cls, session: Session) -> Timestamp:
+    def get_end_datetime(cls, session: Session) -> Timestamp | None:
         offset, nanostamp_ = session.execute(lambda_stmt(lambda: select(cls.tz_offset, func.max(cls.end)))).first()
-        return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+        if nanostamp_ is None:
+            return None
+        elif offset is None:
+            return Timestamp.fromnanostamp(nanostamp_)
+        else:
+            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
     @singlekwargdispatch(kwarg="session")
     @classmethod
-    async def get_end_datetime_async(cls, session: async_sessionmaker[AsyncSession] | AsyncSession) -> Timestamp:
+    async def get_end_datetime_async(cls, session: async_sessionmaker[AsyncSession] | AsyncSession) -> Timestamp | None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
     @get_end_datetime_async.register(async_sessionmaker)
     @classmethod
-    async def _get_end_datetime_async(cls, session: async_sessionmaker[AsyncSession]) -> Timestamp:
+    async def _get_end_datetime_async(cls, session: async_sessionmaker[AsyncSession]) -> Timestamp | None:
         statement = lambda_stmt(lambda: select(cls.tz_offset, func.max(cls.end)))
         async with session() as async_session:
             results = await async_session.execute(statement)
 
         offset, nanostamp_ = results.first()
-        return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+        if nanostamp_ is None:
+            return None
+        elif offset is None:
+            return Timestamp.fromnanostamp(nanostamp_)
+        else:
+            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
     @get_end_datetime_async.register(AsyncSession)
     @classmethod
-    async def _get_end_datetime_async(cls, session: AsyncSession) -> Timestamp:
+    async def _get_end_datetime_async(cls, session: AsyncSession) -> Timestamp | None:
         results = await session.execute(lambda_stmt(lambda: select(cls.tz_offset, func.max(cls.end))))
         offset, nanostamp_ = results.first()
-        return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+        if nanostamp_ is None:
+            return None
+        elif offset is None:
+            return Timestamp.fromnanostamp(nanostamp_)
+        else:
+            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
     @classmethod
     def get_all_nanostamps(cls, session: Session) -> tuple[tuple[int, int, int], ...]:
@@ -162,7 +195,7 @@ class BaseTimeContentsTable(BaseContentsTable):
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
         dict_ = ({} if dict_ is None else dict_) | kwargs
 
-        if timezone := dict_.get("time_zone", None) is not None:
+        if (timezone := dict_.get("timezone", None)) is not None:
             if isinstance(timezone, str):
                 if timezone.lower() == "local" or timezone.lower() == "localtime":
                     timezone = time.localtime().tm_gmtoff
@@ -174,11 +207,11 @@ class BaseTimeContentsTable(BaseContentsTable):
             else:
                 self.tz_offset = timezone
 
-        if start := dict_.get("start", None) is not None:
-            self.start = nanostamp(start)
-        if end := dict_.get("end", None) is not None:
-            self.end = nanostamp(end)
-        if sample_rate := dict_.get("sample_rate", None) is not None:
+        if (start := dict_.get("start", None)) is not None:
+            self.start = int(nanostamp(start))
+        if (end := dict_.get("end", None)) is not None:
+            self.end = int(nanostamp(end))
+        if (sample_rate := dict_.get("sample_rate", None)) is not None:
             self.sample_rate = float(sample_rate)
         super().update(dict_)
         
@@ -194,7 +227,7 @@ class BaseTimeContentsTable(BaseContentsTable):
 
     def as_entry(self) -> dict[str, Any]:
         entry = super().as_entry()
-        tzone = datetime.timezone(datetime.timedelta(seconds=self.tz_offset)),
+        tzone = datetime.timezone(datetime.timedelta(seconds=self.tz_offset))
         entry.update(
             tz_offset=tzone,
             start=Timestamp.fromnanostamp(self.start, tzone),

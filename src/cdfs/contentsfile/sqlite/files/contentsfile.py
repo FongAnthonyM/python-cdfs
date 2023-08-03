@@ -170,17 +170,20 @@ class ContentsFile(CachingObject):
         return self
 
     def close(self) -> bool:
-        self.engine.dispose()
-        self.engine = None
+        if self.engine is not None:
+            self.engine.dispose()
+            self.engine = None
         self.async_engine = None
         self._async_session_maker = None
         return self.engine is None
 
     async def close_async(self) -> bool:
-        self.engine.dispose()
-        await self.async_engine.dispose()
-        self.engine = None
-        self.async_engine = None
+        if self.engine is not None:
+            self.engine.dispose()
+            self.engine = None
+        if self.async_engine is not None:
+            await self.async_engine.dispose()
+            self.async_engine = None
         self._async_session_maker = None
         return self.engine is None
 
@@ -226,14 +229,17 @@ class ContentsFile(CachingObject):
     
     def get_meta_information(self, session: Session | None = None, as_entry: bool = True) -> dict[str, Any]:
         if session is not None:
-            self._meta_information = self.meta_information_table.get_information(session, as_entry=as_entry)
+            self._meta_information = self.meta_information_table.get_information(session, as_entry=False)
         elif self.is_open:
             with self.create_session() as session:
-                self._meta_information = self.meta_information_table.get_information(session, as_entry=as_entry)
+                self._meta_information = self.meta_information_table.get_information(session, as_entry=False)
         else:
             raise IOError("File not open")
 
-        return self._meta_information.as_entry()
+        if as_entry:
+            return self._meta_information.as_entry()
+        else:
+            return self._meta_information
 
     async def get_meta_information_async(
         self,
@@ -241,16 +247,19 @@ class ContentsFile(CachingObject):
         as_entry: bool = True,
     ) -> dict[str, Any] | BaseMetaInformationTable:
         if session is not None:
-            self._meta_information = await self.meta_information_table.get_information_async(session, as_entry=as_entry)
+            self._meta_information = await self.meta_information_table.get_information_async(session, as_entry=False)
         elif self.is_open:
             self._meta_information = await self.meta_information_table.get_information_async(
                 self.async_session_maker,
-                as_entry=as_entry,
+                as_entry=False,
             )
         else:
             raise IOError("File not open")
 
-        return self._meta_information.as_entry()
+        if as_entry:
+            return self._meta_information.as_entry()
+        else:
+            return self._meta_information
     
     def set_meta_information(
         self,

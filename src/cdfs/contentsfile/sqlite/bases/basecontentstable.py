@@ -42,14 +42,14 @@ class BaseContentsTable(BaseTable):
     def format_entry_kwargs(
         cls,
         id_: str | uuid.UUID | None = None,
-        path: str = "",
+        path: pathlib.Path | str = "",
         axis: int = 0,
         shape: tuple[int] = (0,),
         **kwargs: Any,
     ) -> dict[str, Any]:
         kwargs = super().format_entry_kwargs(id_=id_, **kwargs)
         kwargs.update(
-            path=path,
+            path=path.as_posix() if isinstance(path, pathlib.Path) else path,
             axis=axis,
             shape=str(shape).strip("()"),
         )
@@ -71,11 +71,11 @@ class BaseContentsTable(BaseTable):
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
         dict_ = ({} if dict_ is None else dict_) | kwargs
-        if path := dict_.get("path", None) is not None:
-            self.path = path
-        if axis := dict_.get("axis", None) is not None:
+        if (path := dict_.get("path", None)) is not None:
+            self.path = path.as_posix() if isinstance(path, pathlib.Path) else path
+        if (axis := dict_.get("axis", None)) is not None:
             self.axis = axis
-        if shape := dict_.get("shape", None) is not None:
+        if (shape := dict_.get("shape", None)) is not None:
             self.shape = str(shape).strip("()")
         super().update(dict_)
     
