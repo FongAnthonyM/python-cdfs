@@ -194,6 +194,48 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
     def _is_open(self) -> bool:
         pass
 
+    def update_defaults(
+        self,
+        shape: tuple[int] | None = None,
+        axis: int | None = None,
+        sample_rate: float | str | Decimal | None = None,
+        sample_period: float | str | Decimal | None = None,
+        start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
+        end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
+        tzinfo: datetime.tzinfo | None = None,
+    ) -> None:
+        """Updates the default values for this proxy.
+
+        Args:
+            shape: The shape of this proxy.
+            axis: The axis of the data which this proxy extends for the contained data arrays.
+            sample_rate: The sample rate of the data.
+            sample_period: The sample period of this proxy.
+            start: The start of this proxy.
+            end: The end of this proxy.
+            tzinfo: The time zone of the timestamps.
+        """
+        if axis is not None:
+            self.axis = axis
+
+        if shape is not None:
+            self._shape = shape
+
+        if sample_period is not None:
+            self._sample_rate = 1 / Decimal(sample_period)
+
+        if sample_rate is not None:
+            self._sample_rate = Decimal(sample_rate)
+
+        if tzinfo is not None:
+            self._tzinfo = tzinfo
+
+        if start is not None:
+            self._start = int(nanostamp(start))
+
+        if end is not None:
+            self._end = int(nanostamp(end))
+
     # Getters and Setters
     def _get_shape(self) -> tuple[int]:
         return self.data.shape
@@ -205,7 +247,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         Returns:
             The minimum shapes of the contained arrays/objects.
         """
-        if self.is_open():
+        if self.is_open:
             self._shape = self._get_shape()
         return self._shape
 
@@ -218,8 +260,8 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         Returns:
             The shape of this proxy or the minimum sample rate of the contained arrays/objects.
         """
-        if self.is_open():
-            self._shape = self._get_sample_rate_decmial()
+        if self.is_open:
+            self._shape = self._get_sample_rate_decimal()
         return self._sample_rate
 
     def get_sample_rate(self) -> float | None:
@@ -260,7 +302,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         Args:
             tzinfo: The time zone to set.
         """
-        if self.is_open():
+        if self.is_open:
             self._tzinfo = self._get_tzinfo()
         return self._tzinfo
 
@@ -268,7 +310,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         return self.time_axis.start_nanostamp
     
     def get_start_nanostamp(self) -> int | None:
-        if self.is_open():
+        if self.is_open:
             self._start = self._get_start_nanostamp()
         return self._start
 
@@ -276,7 +318,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         return self.time_axis.end_nanostamp
 
     def get_end_nanostamp(self) -> int | None:
-        if self.is_open():
+        if self.is_open:
             self._start = self._get_end_nanostamp()
         return self._start
 
@@ -386,14 +428,14 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
         proxy = self.proxy_paths.get(child_path, None)
         if proxy is None:
             if path:
-                proxy = self.node_type(path=child_path, open_=open_)
+                proxy = self.node_type(path=child_path, open_=open_, build=False)
             else:
                 proxy = self.leaf_type(path=child_path, open_=open_, **kwargs)
             self.proxies.append(proxy)
             self.proxy_paths[child_path] = proxy
 
         if path:
-            proxy.create_child(path=path, open_=open_, **kwargs)
+            proxy.update_child(path=path, open_=open_, **kwargs)
 
         self.proxies.sort(key=lambda f: f.start_timestamp)
         self.clear_caches()
@@ -422,12 +464,12 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
             proxy = self.proxy_paths.get(child_path, None)
             if proxy is None:
                 if info["children"]:
-                    self.proxy_paths[child_path] = proxy = self.node_type(path=child_path, open_=open_)
+                    self.proxy_paths[child_path] = proxy = self.node_type(path=child_path, open_=open_, build=False)
                 else:
                     self.proxy_paths[child_path] = proxy = self.leaf_type(**(kwargs | info["kwargs"]))
                 self.proxies.append(proxy)
             if info["children"]:
-                proxy.create_children(paths=info["children"], open_=open_)
+                proxy.update_children(paths=info["children"], open_=open_)
             else:
                 proxy.update_defaults(**info["kwargs"])
 
