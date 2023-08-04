@@ -320,8 +320,8 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
 
     def get_end_nanostamp(self) -> int | None:
         if self.is_open:
-            self._start = self._get_end_nanostamp()
-        return self._start
+            self._end = self._get_end_nanostamp()
+        return self._end
 
     @abstractmethod
     def load(self) -> None:
