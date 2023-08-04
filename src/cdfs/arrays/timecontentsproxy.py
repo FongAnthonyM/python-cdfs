@@ -583,6 +583,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
         for entry in entries:
             del entry["id"]
+            entry["tzinfo"] = entry.pop("tz_offset")
             update_id = entry.pop("update_id")
             if update_id > self.latest_update:
                 self.latest_update = update_id
