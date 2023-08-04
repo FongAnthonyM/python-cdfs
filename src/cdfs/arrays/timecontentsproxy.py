@@ -203,6 +203,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
         end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
         tzinfo: datetime.tzinfo | None = None,
+        **kwargs: Any,
     ) -> None:
         """Updates the default values for this proxy.
 
@@ -436,6 +437,8 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
 
         if path:
             proxy.update_child(path=path, open_=open_, **kwargs)
+        else:
+            proxy.update_defaults(**kwargs)
 
         self.proxies.sort(key=lambda f: f.start_timestamp)
         self.clear_caches()
@@ -462,16 +465,17 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
 
         for child_path, info in children_info.items():
             proxy = self.proxy_paths.get(child_path, None)
+            update_leaf = not info["children"] or (len(info["children"]) < 1 and not info["children"][0]["path"])
             if proxy is None:
-                if info["children"]:
-                    self.proxy_paths[child_path] = proxy = self.node_type(path=child_path, open_=open_, build=False)
-                else:
+                if update_leaf:
                     self.proxy_paths[child_path] = proxy = self.leaf_type(**(kwargs | info["kwargs"]))
+                else:
+                    self.proxy_paths[child_path] = proxy = self.node_type(path=child_path, open_=open_, build=False)
                 self.proxies.append(proxy)
-            if info["children"]:
-                proxy.update_children(paths=info["children"], open_=open_)
-            else:
+            if update_leaf:
                 proxy.update_defaults(**info["kwargs"])
+            else:
+                proxy.update_children(paths=info["children"], open_=open_)
 
         if sort:
             self.proxies.sort(key=lambda f: f.start_timestamp)
