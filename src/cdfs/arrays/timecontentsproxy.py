@@ -440,7 +440,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
         else:
             proxy.update_defaults(**kwargs)
 
-        self.proxies.sort(key=lambda f: f.start_timestamp)
+        self.proxies.sort(key=lambda p: p.start_timestamp)
         self.clear_caches()
 
     def update_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs) -> None:
@@ -475,10 +475,10 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
             if update_leaf:
                 proxy.update_defaults(**info["kwargs"])
             else:
-                proxy.update_children(paths=info["children"], open_=open_)
+                proxy.update_children(paths=info["children"], open_=open_, sort=sort)
 
         if sort:
-            self.proxies.sort(key=lambda f: f.start_timestamp)
+            self.proxies.sort(key=lambda p: p.start_timestamp)
             self.clear_caches()
 
 
