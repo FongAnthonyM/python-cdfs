@@ -465,7 +465,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
 
         for child_path, info in children_info.items():
             proxy = self.proxy_paths.get(child_path, None)
-            update_leaf = not info["children"] or (len(info["children"]) < 1 and not info["children"][0]["path"])
+            update_leaf = not info["children"] or (len(info["children"]) == 1 and not info["children"][0]["path"])
             if proxy is None:
                 if update_leaf:
                     self.proxy_paths[child_path] = proxy = self.leaf_type(**(kwargs | info["kwargs"]))
