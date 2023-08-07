@@ -75,7 +75,6 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
                 sample_period=sample_period,
                 start=start,
                 end=end,
-                precise=precise,
                 tzinfo=tzinfo,
                 mode=mode,
                 **kwargs,
