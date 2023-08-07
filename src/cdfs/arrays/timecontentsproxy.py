@@ -48,7 +48,6 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         sample_period: float | str | Decimal | None = None,
         start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
         end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         *,
         path: str | pathlib.Path | None = None,
@@ -151,7 +150,6 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         sample_period: float | str | Decimal | None = None,
         start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
         end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         *,
         path: str | pathlib.Path | None = None,
@@ -168,13 +166,15 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
             sample_period: The sample period of this proxy.
             start: The start of this proxy.
             end: The end of this proxy.
-            precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
             tzinfo: The time zone of the timestamps.
             path: The path of the file to wrap.
             **kwargs: The keyword arguments for constructing the file object.
         """
         if shape is not None:
             self._shape = shape
+
+        if axis is not None:
+            self.axis = axis
         
         if sample_period is not None:
             self._sample_rate = 1 / Decimal(sample_period)
@@ -192,7 +192,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
             self._end = int(nanostamp(end))
 
         # Parent Construction
-        super().construct(file=file, mode=mode, axis=axis, precise=precise, path=path, **kwargs)
+        super().construct(file=file, mode=mode, path=path, **kwargs)
 
     @abstractmethod
     def _is_open(self) -> bool:
@@ -220,11 +220,11 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
             end: The end of this proxy.
             tzinfo: The time zone of the timestamps.
         """
-        if axis is not None:
-            self.axis = axis
-
         if shape is not None:
             self._shape = shape
+
+        if axis is not None:
+            self.axis = axis
 
         if sample_period is not None:
             self._sample_rate = 1 / Decimal(sample_period)
