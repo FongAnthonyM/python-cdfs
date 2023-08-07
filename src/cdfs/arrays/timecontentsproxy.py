@@ -41,7 +41,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
     def __init__(
         self,
         file: Any = None,
-        path: pathlib.Path | str | None = None,
+        mode: str | None = "r",
         shape: tuple[int] | None = None,
         axis: int | None = None,
         sample_rate: float | str | Decimal | None = None,
@@ -50,7 +50,8 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
-        mode: str | None = None,
+        *,
+        path: str | pathlib.Path | None = None,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -143,6 +144,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
     def construct(
         self,
         file: Any = None,
+        mode: str | None = None,
         shape: tuple[int] | None = None,
         axis: int | None = None,
         sample_rate: float | str | Decimal | None = None,
@@ -151,13 +153,15 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
-        mode: str | None = None,
+        *,
+        path: str | pathlib.Path | None = None,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
 
         Args:
             file: The file object to wrap or a path to the file.
+            mode: The mode this proxy and file will be in.
             shape: The shape of this proxy.
             axis: The axis of the data which this proxy extends for the contained data arrays.
             sample_rate: The sample rate of the data.
@@ -166,7 +170,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
             end: The end of this proxy.
             precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
             tzinfo: The time zone of the timestamps.
-            mode: The mode this proxy and file will be in.
+            path: The path of the file to wrap.
             **kwargs: The keyword arguments for constructing the file object.
         """
         if shape is not None:
@@ -188,7 +192,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
             self._end = int(nanostamp(end))
 
         # Parent Construction
-        super().construct(file=file, mode=mode, axis=axis, precise=precise, **kwargs)
+        super().construct(file=file, mode=mode, axis=axis, precise=precise, path=path, **kwargs)
 
     @abstractmethod
     def _is_open(self) -> bool:
@@ -381,7 +385,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
         axis: int | None = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
-        mode: str = "a",
+        mode: str = "r",
         update: bool = True,
         open_: bool = False,
         build: bool = True,
@@ -429,9 +433,9 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
         proxy = self.proxy_paths.get(child_path, None)
         if proxy is None:
             if path:
-                proxy = self.node_type(path=child_path, open_=open_, build=False)
+                proxy = self.node_type(path=child_path, mode=self.mode, open_=open_, build=False)
             else:
-                proxy = self.leaf_type(path=child_path, open_=open_, **kwargs)
+                proxy = self.leaf_type(path=child_path, mode=self.mode, open_=open_,  **kwargs)
             self.proxies.append(proxy)
             self.proxy_paths[child_path] = proxy
 
@@ -468,9 +472,14 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
             update_leaf = not info["children"] or (len(info["children"]) == 1 and not info["children"][0]["path"])
             if proxy is None:
                 if update_leaf:
-                    self.proxy_paths[child_path] = proxy = self.leaf_type(**(kwargs | info["kwargs"]))
+                    self.proxy_paths[child_path] = proxy = self.leaf_type(mode=self.mode, **(kwargs | info["kwargs"]))
                 else:
-                    self.proxy_paths[child_path] = proxy = self.node_type(path=child_path, open_=open_, build=False)
+                    self.proxy_paths[child_path] = proxy = self.node_type(
+                        path=child_path,
+                        mode=self.mode,
+                        open_=open_,
+                        build=False,
+                    )
                 self.proxies.append(proxy)
             if update_leaf:
                 proxy.update_defaults(**info["kwargs"])
