@@ -245,7 +245,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         return self.data.shape
 
     @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
-    def get_shape(self, **kwargs) -> tuple[int]:
+    def get_shape(self, **kwargs: Any) -> tuple[int]:
         """Get the minimum shapes from the contained arrays/objects if they are different across axes.
 
         Returns:
@@ -417,7 +417,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
         self,
         path: str | list[str],
         open_: bool = False,
-        **kwargs
+        **kwargs: Any,
     ) -> None:
         """Creates a child proxy from the given child path.
 
@@ -446,7 +446,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
         self.proxies.sort(key=lambda p: p.start_timestamp)
         self.clear_caches()
 
-    def update_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs) -> None:
+    def update_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs: Any) -> None:
         """Creates child arrays the given child paths.
 
         Args:
@@ -483,7 +483,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
             if update_leaf:
                 proxy.update_defaults(**info["kwargs"])
             else:
-                proxy.update_children(paths=info["children"], open_=open_, sort=sort)
+                proxy.update_children(paths=info["children"], open_=open_, sort=sort, **kwargs)
 
         if sort:
             self.proxies.sort(key=lambda p: p.start_timestamp)
@@ -578,7 +578,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
         super().construct(path=path, proxies=proxies, mode=mode, update=update, open_=open_, build=build, **kwargs)
 
-    def construct_proxies(self, open_=False, **kwargs) -> None:
+    def construct_proxies(self, open_=False, **kwargs: Any) -> None:
         """Constructs the arrays for this object.
 
         Args:
@@ -598,7 +598,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
         self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
-    async def construct_proxies_async(self, open_=False, **kwargs) -> None:
+    async def construct_proxies_async(self, open_=False, **kwargs: Any) -> None:
         """Constructs the arrays for this object.
 
         Args:
@@ -620,7 +620,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
         self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
-    def update_proxies(self, open_=False, **kwargs) -> None:
+    def update_proxies(self, open_=False, **kwargs: Any) -> None:
         """Updates the arrays for this object.
 
         Args:
@@ -645,7 +645,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
             self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
-    async def update_proxies_async(self, open_=False, **kwargs) -> None:
+    async def update_proxies_async(self, open_=False, **kwargs: Any) -> None:
         """Updates the arrays for this object.
 
         Args:
