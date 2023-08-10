@@ -57,7 +57,10 @@ class CDFS(CachingObject, BaseComposite):
         mode: str = "r",
         open_: bool = True,
         load: bool = True,
+        create: bool = False,
         update: bool = False,
+        contents_name: str | None = None,
+        *,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -88,6 +91,7 @@ class CDFS(CachingObject, BaseComposite):
                 mode=mode,
                 open_=open_,
                 load=load,
+                create=create,
                 update=update,
                 **kwargs,
             )
@@ -140,10 +144,12 @@ class CDFS(CachingObject, BaseComposite):
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        mode: str = "r",
-        update: bool = False,
+        mode: str | None = None,
         open_: bool = False,
         load: bool = False,
+        create: bool = False,
+        update: bool = False,
+        contents_name: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
@@ -164,11 +170,14 @@ class CDFS(CachingObject, BaseComposite):
 
         if mode is not None:
             self._mode = mode
+            
+        if contents_name is not None:
+            self.contents_file_name = contents_name
 
         super().construct(**kwargs)
 
         if open_:
-            self.open(load=load)
+            self.open(load=load, create=create)
 
     # Contents File
     def open_contents_file(
