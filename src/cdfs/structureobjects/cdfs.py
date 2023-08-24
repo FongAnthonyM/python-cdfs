@@ -93,6 +93,7 @@ class CDFS(CachingObject, BaseComposite):
                 load=load,
                 create=create,
                 update=update,
+                contents_name=contents_name,
                 **kwargs,
             )
 
@@ -304,6 +305,7 @@ class CDFS(CachingObject, BaseComposite):
                     raise ValueError("Contents file does not exist.")
             else:
                 self.open_contents_file(create=create, **kwargs)
+                self.contents_file.get_meta_information()
             self._is_open = True
 
             if load:
