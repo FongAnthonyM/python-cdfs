@@ -177,7 +177,7 @@ class CDFS(CachingObject, BaseComposite):
 
         super().construct(**kwargs)
 
-        if open_:
+        if open_ or load or create:
             self.open(load=load, create=create)
 
     # Contents File
