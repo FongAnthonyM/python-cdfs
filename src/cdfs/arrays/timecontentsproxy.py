@@ -576,6 +576,12 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         if contents_file is not None:
             self.contents_file = contents_file
 
+        if self.contents_file is not None:
+            try:
+                self.get_tzinfo()
+            except:
+                pass
+
         super().construct(path=path, proxies=proxies, mode=mode, update=update, open_=open_, build=build, **kwargs)
 
     def construct_proxies(self, open_=False, **kwargs: Any) -> None:
@@ -585,6 +591,9 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             open_: Determines if the arrays will remain open after construction.
             **kwargs: The keyword arguments to create contained arrays.
         """
+        if self.tzinfo is None:
+            self.get_tzinfo()
+
         self.proxy_paths.clear()
         with self.contents_file.create_session() as session:
             entries = self.contents_file.contents.get_all(session=session, as_entries=True)
@@ -668,3 +677,12 @@ class TimeContentsProxy(TimeContentsNodeProxy):
                     self.latest_update = update_id
 
             self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
+
+    def get_tzinfo(self) -> datetime.tzinfo:
+        """Gets the tzinfo from the contents file.
+
+        Returns:
+            The tzinfo from the conetnes file.
+        """
+        self.tzinfo = self.contents_file.get_meta_information()["tz_offset"]
+        return self.tzinfo
