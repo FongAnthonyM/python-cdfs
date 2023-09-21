@@ -266,7 +266,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         return self._shape
 
     def _get_sample_rate_decimal(self) -> Decimal:
-        return self.time_axis.sample_rate.decimal
+        return self.time_axis.sample_rate_decmial
 
     def get_sample_rate_decimal(self) -> Decimal | None:
         """Get the sample rate of this proxy from the contained arrays/objects.
