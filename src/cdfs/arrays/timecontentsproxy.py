@@ -127,6 +127,16 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         return float(end) / 10 ** 9 if end is not None else None
 
     @property
+    def sample_rate(self) -> float:
+        """The sample rate of this proxy."""
+        return self.get_sample_rate()
+
+    @property
+    def sample_rate_decimal(self) -> Decimal:
+        """The sample rate as Decimal object"""
+        return self.get_sample_rate_decimal()
+
+    @property
     def sample_period(self) -> float:
         """The sample period of this proxy."""
         return self.get_sample_period()
@@ -256,7 +266,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         return self._shape
 
     def _get_sample_rate_decimal(self) -> Decimal:
-        return self.time_axis.get_sample_rate_decimal()
+        return self.time_axis.sample_rate.decimal
 
     def get_sample_rate_decimal(self) -> Decimal | None:
         """Get the sample rate of this proxy from the contained arrays/objects.
@@ -265,7 +275,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
             The shape of this proxy or the minimum sample rate of the contained arrays/objects.
         """
         if self.is_open:
-            self._shape = self._get_sample_rate_decimal()
+            self._sample_rate = self._get_sample_rate_decimal()
         return self._sample_rate
 
     def get_sample_rate(self) -> float | None:
