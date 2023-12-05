@@ -1,8 +1,8 @@
-"""timecontentframe.py
+"""timecontentsproxy.py
 
 """
 # Package Header #
-from ...header import *
+from ....header import *
 
 # Header #
 __author__ = __author__
@@ -45,12 +45,12 @@ class TimeContentFrame(DirectoryTimeFrame):
     Args:
         path: The path for this frame to wrap.
         content_map: A HDF5Dataset with the mapping information for creating the frame structure.
-        frames: An iterable holding frames/objects to store in this frame.
+        frames: An iterable holding arrays/objects to store in this frame.
         mode: Determines if the contents of this frame are editable or not.
         update: Determines if this frame will start_timestamp updating or not.
-        open_: Determines if the frames will remain open after construction.
-        build: Determines if the frames will be constructed.
-        **kwargs: The keyword arguments to create contained frames.
+        open_: Determines if the arrays will remain open after construction.
+        build: Determines if the arrays will be constructed.
+        **kwargs: The keyword arguments to create contained arrays.
         init: Determines if this object will construct.
     """
 
@@ -141,12 +141,12 @@ class TimeContentFrame(DirectoryTimeFrame):
         Args:
             path: The path for this frame to wrap.
             content_map: A HDF5Dataset with the mapping information for creating the frame structure.
-            frames: An iterable holding frames/objects to store in this frame.
+            frames: An iterable holding arrays/objects to store in this frame.
             mode: Determines if the contents of this frame are editable or not.
             update: Determines if this frame will start_timestamp updating or not.
-            open_: Determines if the frames will remain open after construction.
-            build: Determines if the frames will be constructed.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after construction.
+            build: Determines if the arrays will be constructed.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         if content_map is not None:
             self.content_map = content_map
@@ -154,11 +154,11 @@ class TimeContentFrame(DirectoryTimeFrame):
         super().construct(path=path, frames=frames, mode=mode, update=update, open_=open_, build=build, **kwargs)
 
     def construct_leaf_frames(self, open_=False, **kwargs) -> None:
-        """Constructs the frames for this object when they are leaves.
+        """Constructs the arrays for this object when they are leaves.
 
         Args:
-            open_: Determines if the frames will remain open after construction.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after construction.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map[...]):
             path = self.path / frame_info["Path"].decode()
@@ -172,11 +172,11 @@ class TimeContentFrame(DirectoryTimeFrame):
         self.clear_caches()
 
     def construct_node_frames(self, open_=False, **kwargs) -> None:
-        """Constructs the frames for this object when they are nodes.
+        """Constructs the arrays for this object when they are nodes.
 
         Args:
-            open_: Determines if the frames will remain open after construction.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after construction.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         for i, frame_info in enumerate(self.content_map.components["tree_node"].node_map[...]):
             path = self.path / frame_info["Path"].decode()
@@ -191,11 +191,11 @@ class TimeContentFrame(DirectoryTimeFrame):
         self.clear_caches()
 
     def construct_frames(self, open_=False, **kwargs) -> None:
-        """Constructs the frames for this object.
+        """Constructs the arrays for this object.
 
         Args:
-            open_: Determines if the frames will remain open after construction.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after construction.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         self.frame_paths.clear()
         self.valid_indices.clear()
@@ -207,11 +207,11 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def update_frames(self, open_=False, **kwargs) -> None:
-        """Updates the frames for this object.
+        """Updates the arrays for this object.
 
         Args:
-            open_: Determines if the frames will remain open after the update.
-            **kwargs: The keyword arguments to create contained frames.
+            open_: Determines if the arrays will remain open after the update.
+            **kwargs: The keyword arguments to create contained arrays.
         """
         if self.content_map.attributes["tree_type"] == "Node":
             self.construct_node_frames(open_=open_, **kwargs)
@@ -221,10 +221,10 @@ class TimeContentFrame(DirectoryTimeFrame):
     # Getters and Setters
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_min_shape(self, **kwargs) -> tuple[int]:
-        """Get the minimum shapes from the contained frames/objects if they are different across axes.
+        """Get the minimum shapes from the contained arrays/objects if they are different across axes.
 
         Returns:
-            The minimum shapes of the contained frames/objects.
+            The minimum shapes of the contained arrays/objects.
         """
         if self.content_map.file.swmr_mode:
             self.update_frames.caching_call(**kwargs)
@@ -232,10 +232,10 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_max_shape(self, **kwargs) -> tuple[int]:
-        """Get the maximum shapes from the contained frames/objects if they are different across axes.
+        """Get the maximum shapes from the contained arrays/objects if they are different across axes.
 
         Returns:
-            The maximum shapes of the contained frames/objects.
+            The maximum shapes of the contained arrays/objects.
         """
         if self.content_map.file.swmr_mode:
             self.update_frames.caching_call(**kwargs)
@@ -243,10 +243,10 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_lengths(self, **kwargs) -> tuple[int]:
-        """Get the lengths of the contained frames/objects.
+        """Get the lengths of the contained arrays/objects.
 
         Returns:
-            All the lengths of the contained frames/objects.
+            All the lengths of the contained arrays/objects.
         """
         if self.content_map.file.swmr_mode:
             self.update_frames.caching_call(**kwargs)
@@ -254,7 +254,7 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_start_datetimes(self, **kwargs) -> tuple[Timestamp | None]:
-        """Get the start_timestamp datetimes of all contained frames.
+        """Get the start_timestamp datetimes of all contained arrays.
 
         Returns:
             All the start_timestamp datetimes.
@@ -266,7 +266,7 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_start_nanostamps(self, **kwargs) -> np.ndarray:
-        """Get the start_nanostamp nanostamps of all contained frames.
+        """Get the start_nanostamp nanostamps of all contained arrays.
 
         Returns:
             All the start_nanostamp nanostamps.
@@ -278,7 +278,7 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_start_timestamps(self, **kwargs) -> np.ndarray:
-        """Get the start_timestamp timestamps of all contained frames.
+        """Get the start_timestamp timestamps of all contained arrays.
 
         Returns:
             All the start_timestamp timestamps.
@@ -290,7 +290,7 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_end_datetimes(self, **kwargs) -> tuple[Timestamp | None]:
-        """Get the end_timestamp datetimes of all contained frames.
+        """Get the end_timestamp datetimes of all contained arrays.
 
         Returns:
             All the end_timestamp datetimes.
@@ -302,7 +302,7 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_end_nanostamps(self, **kwargs) -> np.ndarray:
-        """Get the end_nanostamp nanostamps of all contained frames.
+        """Get the end_nanostamp nanostamps of all contained arrays.
 
         Returns:
             All the end_nanostamp nanostamps.
@@ -314,7 +314,7 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_end_timestamps(self, **kwargs) -> np.ndarray:
-        """Get the end_timestamp timestamps of all contained frames.
+        """Get the end_timestamp timestamps of all contained arrays.
 
         Returns:
             All the end_timestamp timestamps.
@@ -326,10 +326,10 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_sample_rates(self, **kwargs) -> tuple[float]:
-        """Get the sample rates of all contained frames.
+        """Get the sample rates of all contained arrays.
 
         Returns:
-            The sample rates of all contained frames.
+            The sample rates of all contained arrays.
         """
         if self.content_map.file.swmr_mode:
             self.update_frames.caching_call(**kwargs)
@@ -340,10 +340,10 @@ class TimeContentFrame(DirectoryTimeFrame):
 
     @timed_keyless_cache(lifetime=0.5, call_method="clearing_call", local=True)
     def get_sample_rates_decimal(self, **kwargs) -> tuple[Decimal]:
-        """Get the sample rates of all contained frames.
+        """Get the sample rates of all contained arrays.
 
         Returns:
-            The sample rates of all contained frames.
+            The sample rates of all contained arrays.
         """
         if self.content_map.file.swmr_mode:
             self.update_frames.caching_call(**kwargs)

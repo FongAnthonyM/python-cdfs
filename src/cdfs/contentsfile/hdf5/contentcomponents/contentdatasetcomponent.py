@@ -2,7 +2,7 @@
 A node component which implements content information in its dataset.
 """
 # Package Header #
-from ...header import *
+from ....header import *
 
 # Header #
 __author__ = __author__
@@ -374,7 +374,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
             index: The index of the entry to update.
         """
         child = self.composite.file[self.composite.dtypes_dict[self.reference_field]]
-        self.set_entry(index=index, axis=child.axis, min_shape=child.min_shape, max_shape=child.max_shape)
+        self.set_entry(index=index, axis=child.axis, min_shape=child.shape, max_shape=child.max_shape)
 
     def update_entries(self) -> None:
         """Updates all entries to the correct information of their child."""
@@ -382,7 +382,7 @@ class ContentDatasetComponent(NodeDatasetComponent):
         data = self.composite[...]
         for i, child_ref in enumerate(child_refs):
             child = self.composite.file[child_ref]
-            min_shape = child.min_shape
+            min_shape = child.shape
             max_shape = child.max_shape
 
             self.region_references.set_reference_to(index=i, value=min_shape, ref_name=self.mins_name)

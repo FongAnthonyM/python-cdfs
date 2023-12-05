@@ -2,7 +2,7 @@
 A node component which implements an interface for a time content dataset.
 """
 # Package Header #
-from ...header import *
+from ....header import *
 
 # Header #
 __author__ = __author__
@@ -556,7 +556,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 index=index,
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
                 sample_rate=child_node_component.sample_rate,
             )
@@ -629,7 +629,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
                 sample_rate=child_node_component.sample_rate,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
         else:
@@ -701,7 +701,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
                 sample_rate=child_node_component.sample_rate,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
         else:
@@ -793,7 +793,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
                 sample_rate=child_node_component.sample_rate,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
 
@@ -863,7 +863,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
                 sample_rate=child_node_component.sample_rate,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
 
@@ -933,7 +933,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
                 sample_rate=child_node_component.sample_rate,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
 
@@ -1010,7 +1010,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 index=index,
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
                 sample_rate=child_node_component.sample_rate,
             )
@@ -1081,7 +1081,7 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
                 sample_rate=child_node_component.sample_rate,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
 
@@ -1151,6 +1151,6 @@ class TimeContentGroupComponent(ContentGroupComponent):
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
                 sample_rate=child_node_component.sample_rate,
-                min_shape=child_node_component.min_shape,
+                min_shape=child_node_component.shape,
                 max_shape=child_node_component.max_shape,
             )
