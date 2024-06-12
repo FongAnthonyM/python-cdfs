@@ -51,8 +51,8 @@ class BaseTable:
         results = session.execute(lambda_stmt(lambda: select(cls)))
         return [r.as_entry() for r in results.scalars()] if as_entries else results
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def get_all_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -60,8 +60,8 @@ class BaseTable:
     ) -> Result | list[dict[str, Any]]:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @get_all_async.register(async_sessionmaker)
     @classmethod
+    @get_all_async.__wrapped__.register(async_sessionmaker)
     async def _get_all_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -73,8 +73,8 @@ class BaseTable:
 
         return [r.as_entry() for r in results.scalars()] if as_entries else results
 
-    @get_all_async.register(AsyncSession)
     @classmethod
+    @get_all_async.__wrapped__.register(AsyncSession)
     async def _get_all_async(
         cls,
         session: AsyncSession,
@@ -102,8 +102,8 @@ class BaseTable:
         else:
             session.add(item)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def insert_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -115,8 +115,8 @@ class BaseTable:
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @insert_async.register(async_sessionmaker)
     @classmethod
+    @insert_async.__wrapped__.register(async_sessionmaker)
     async def _insert_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -132,8 +132,8 @@ class BaseTable:
             async with async_session.begin():
                 async_session.add(item)
 
-    @insert_async.register(AsyncSession)
     @classmethod
+    @insert_async.__wrapped__.register(AsyncSession)
     async def _insert_async(
         cls,
         session: AsyncSession,
@@ -169,8 +169,8 @@ class BaseTable:
         else:
             session.add_all(items)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def insert_all_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -180,8 +180,8 @@ class BaseTable:
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @insert_all_async.register(async_sessionmaker)
     @classmethod
+    @insert_all_async.__wrapped__.register(async_sessionmaker)
     async def _insert_all_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -195,8 +195,8 @@ class BaseTable:
             async with async_session.begin():
                 async_session.add_all(items)
 
-    @insert_all_async.register(AsyncSession)
     @classmethod
+    @insert_all_async.__wrapped__.register(AsyncSession)
     async def insert_all_async(
         cls,
         session: AsyncSession,
@@ -245,8 +245,8 @@ class BaseTable:
             else:
                 item.update(entry)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def update_entry_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -257,8 +257,8 @@ class BaseTable:
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @update_entry_async.register(async_sessionmaker)
     @classmethod
+    @update_entry_async.__wrapped__.register(async_sessionmaker)
     async def _update_entry_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -277,8 +277,8 @@ class BaseTable:
                 else:
                     item.update(entry)
 
-    @update_entry_async.register(AsyncSession)
     @classmethod
+    @update_entry_async.__wrapped__.register(AsyncSession)
     async def _update_entry_async(
         cls,
         session: AsyncSession,
@@ -332,8 +332,8 @@ class BaseTable:
             if items:
                 cls.insert_all(session=session, items=items, as_entries=True)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def update_entries_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -343,8 +343,8 @@ class BaseTable:
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @update_entries_async.register(async_sessionmaker)
     @classmethod
+    @update_entries_async.__wrapped__.register(async_sessionmaker)
     async def _update_entries_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -364,8 +364,8 @@ class BaseTable:
                 if items:
                     await cls.insert_all_async(session=async_session, items=items, as_entries=True)
 
-    @update_entries_async.register(AsyncSession)
     @classmethod
+    @update_entries_async.__wrapped__.register(AsyncSession)
     async def _update_entries_async(
         cls,
         session: AsyncSession,
@@ -407,8 +407,8 @@ class BaseTable:
         else:
             session.delete(item)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def delete_item_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -417,8 +417,8 @@ class BaseTable:
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @delete_item_async.register(async_sessionmaker)
     @classmethod
+    @delete_item_async.__wrapped__.register(async_sessionmaker)
     async def _delete_entry_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -429,8 +429,8 @@ class BaseTable:
             async with async_session.begin():
                 await async_session.delete(item)
 
-    @delete_item_async.register(AsyncSession)
     @classmethod
+    @delete_item_async.__wrapped__.register(AsyncSession)
     async def _delete_item_async(
         cls,
         session: AsyncSession,
@@ -447,20 +447,20 @@ class BaseTable:
     def get_last_update_id(cls, session: Session) -> int | None:
         return session.execute(lambda_stmt(lambda: select(func.max(cls.update_id)))).one_or_none()[0]
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def get_last_update_id_async(cls, session: async_sessionmaker[AsyncSession] | AsyncSession) -> int | None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @get_last_update_id_async.register(async_sessionmaker)
     @classmethod
+    @get_last_update_id_async.__wrapped__.register(async_sessionmaker)
     async def _get_last_update_id_async(cls, session: async_sessionmaker[AsyncSession]) -> int | None:
         statement = lambda_stmt(lambda: select(func.max(cls.update_id)))
         async with session() as async_session:
             return (await async_session.execute(statement)).one_or_none()[0]
 
-    @get_last_update_id_async.register(AsyncSession)
     @classmethod
+    @get_last_update_id_async.__wrapped__.register(AsyncSession)
     async def _get_last_update_id_async(cls, session: AsyncSession) -> int | None:
         return (await session.execute(lambda_stmt(lambda: select(func.max(cls.update_id))))).one_or_none()[0]
 
@@ -481,8 +481,8 @@ class BaseTable:
         results = session.execute(update_statement)
         return [r.as_entry() for r in results.scalars()] if as_entries else results
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def get_from_update_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -492,8 +492,8 @@ class BaseTable:
     ) -> Result | list[dict[str, Any]]:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @get_from_update_async.register(async_sessionmaker)
     @classmethod
+    @get_from_update_async.__wrapped__.register(async_sessionmaker)
     async def _get_from_update_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -512,8 +512,8 @@ class BaseTable:
 
         return [r.as_entry() for r in results.scalars()] if as_entries else results
 
-    @get_from_update_async.register(AsyncSession)
     @classmethod
+    @get_from_update_async.__wrapped__.register(AsyncSession)
     async def _get_from_update_async(
         cls,
         session: AsyncSession,

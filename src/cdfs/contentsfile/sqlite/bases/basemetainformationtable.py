@@ -54,8 +54,8 @@ class BaseMetaInformationTable(BaseTable):
             else:
                 result.update(entry, **kwargs)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def create_information_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -65,8 +65,8 @@ class BaseMetaInformationTable(BaseTable):
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @create_information_async.register(async_sessionmaker)
     @classmethod
+    @create_information_async.__wrapped__.register(async_sessionmaker)
     async def _create_information_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -83,8 +83,8 @@ class BaseMetaInformationTable(BaseTable):
                 else:
                     result.update(entry, **kwargs)
 
-    @create_information_async.register(AsyncSession)
     @classmethod
+    @create_information_async.__wrapped__.register(AsyncSession)
     async def _create_information_async(
         cls,
         session: AsyncSession,
@@ -116,8 +116,8 @@ class BaseMetaInformationTable(BaseTable):
         result = session.execute(lambda_stmt(lambda: select(cls))).scalar()
         return (result.as_entry() if as_entry else result) if result is not None else {}
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def get_information_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -125,8 +125,8 @@ class BaseMetaInformationTable(BaseTable):
     ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @get_information_async.register(async_sessionmaker)
     @classmethod
+    @get_information_async.__wrapped__.register(async_sessionmaker)
     async def _get_information_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -138,8 +138,8 @@ class BaseMetaInformationTable(BaseTable):
 
         return (result.as_entry() if as_entry else result) if result is not None else {}
 
-    @get_information_async.register(AsyncSession)
     @classmethod
+    @get_information_async.__wrapped__.register(AsyncSession)
     async def _get_information_async(
         cls,
         session: AsyncSession,
@@ -162,8 +162,8 @@ class BaseMetaInformationTable(BaseTable):
         else:
             session.execute(lambda_stmt(lambda: select(cls))).scalar().update(entry, **kwargs)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def set_information_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -173,8 +173,8 @@ class BaseMetaInformationTable(BaseTable):
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @set_information_async.register(async_sessionmaker)
     @classmethod
+    @set_information_async.__wrapped__.register(async_sessionmaker)
     async def _set_information_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -187,8 +187,8 @@ class BaseMetaInformationTable(BaseTable):
             async with async_session.begin():
                 (await async_session.execute(statement)).scalar().update(entry, **kwargs)
 
-    @set_information_async.register(AsyncSession)
     @classmethod
+    @set_information_async.__wrapped__.register(AsyncSession)
     async def _set_information_async(
         cls,
         session: AsyncSession,

@@ -85,16 +85,16 @@ class BaseTimeContentsTable(BaseContentsTable):
         else:
             return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def get_start_datetime_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
     ) -> Timestamp | None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @get_start_datetime_async.register(async_sessionmaker)
     @classmethod
+    @get_start_datetime_async.__wrapped__.register(async_sessionmaker)
     async def _get_start_datetime_async(cls, session: async_sessionmaker[AsyncSession]) -> Timestamp | None:
         statement = lambda_stmt(lambda: select(cls.tz_offset, func.min(cls.start)))
         async with session() as async_session:
@@ -108,8 +108,8 @@ class BaseTimeContentsTable(BaseContentsTable):
         else:
             return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
-    @get_start_datetime_async.register(AsyncSession)
     @classmethod
+    @get_start_datetime_async.__wrapped__.register(AsyncSession)
     async def _get_start_datetime_async(cls, session: AsyncSession) -> Timestamp | None:
         results = await session.execute(lambda_stmt(lambda: select(cls.tz_offset, func.min(cls.start))))
         offset, nanostamp_ = results.first()
@@ -130,13 +130,13 @@ class BaseTimeContentsTable(BaseContentsTable):
         else:
             return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def get_end_datetime_async(cls, session: async_sessionmaker[AsyncSession] | AsyncSession) -> Timestamp | None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @get_end_datetime_async.register(async_sessionmaker)
     @classmethod
+    @get_end_datetime_async.__wrapped__.register(async_sessionmaker)
     async def _get_end_datetime_async(cls, session: async_sessionmaker[AsyncSession]) -> Timestamp | None:
         statement = lambda_stmt(lambda: select(cls.tz_offset, func.max(cls.end)))
         async with session() as async_session:
@@ -150,8 +150,8 @@ class BaseTimeContentsTable(BaseContentsTable):
         else:
             return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
-    @get_end_datetime_async.register(AsyncSession)
     @classmethod
+    @get_end_datetime_async.__wrapped__.register(AsyncSession)
     async def _get_end_datetime_async(cls, session: AsyncSession) -> Timestamp | None:
         results = await session.execute(lambda_stmt(lambda: select(cls.tz_offset, func.max(cls.end))))
         offset, nanostamp_ = results.first()
@@ -167,16 +167,16 @@ class BaseTimeContentsTable(BaseContentsTable):
         statement = lambda_stmt(lambda: select(cls.start, cls.end, cls.tz_offset).order_by(cls.start))
         return tuple(session.execute(statement))
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def get_all_nanostamps_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
     ) -> tuple[tuple[int, int, int], ...]:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @get_all_nanostamps_async.register(async_sessionmaker)
     @classmethod
+    @get_all_nanostamps_async.__wrapped__.register(async_sessionmaker)
     async def _get_all_nanostamps_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -185,8 +185,8 @@ class BaseTimeContentsTable(BaseContentsTable):
         async with session() as async_session:
             return tuple(await async_session.execute(statement))
 
-    @get_all_nanostamps_async.register(AsyncSession)
     @classmethod
+    @get_all_nanostamps_async.__wrapped__.register(AsyncSession)
     async def _get_all_nanostamps_async(cls, session: AsyncSession) -> tuple[tuple[int, int, int], ...]:
         statement = lambda_stmt(lambda: select(cls.start, cls.end, cls.tz_offset).order_by(cls.start))
         return tuple(await session.execute(statement))
