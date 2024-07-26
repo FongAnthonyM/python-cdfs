@@ -1,0 +1,233 @@
+"""basecdfs.py
+
+"""
+# Package Header #
+from .header import *
+
+# Header #
+__author__ = __author__
+__credits__ = __credits__
+__maintainer__ = __maintainer__
+__email__ = __email__
+
+
+# Imports #
+# Standard Libraries #
+from abc import abstractmethod
+import datetime
+import pathlib
+from typing import ClassVar, Any
+
+# Third-Party Packages #
+from baseobjects import BaseComposite
+from baseobjects.cachingtools import CachingObject, timed_keyless_cache
+from dspobjects.time import Timestamp
+from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+# Local Packages #
+from cdfs.contentsfile import ContentsFile
+
+
+# Definitions #
+# Classes #
+class ContentsFileAsyncSchema(AsyncAttrs, DeclarativeBase):
+    pass
+
+
+class MetaInformationTable(BaseMetaInformationTable, ContentsFileAsyncSchema):
+    pass
+
+
+class ContentsTable(BaseContentsTable, ContentsFileAsyncSchema):
+    pass
+
+
+class BaseCDFS(CachingObject, BaseComposite):
+
+    # Class Attributes #
+    default_component_types: ClassVar[dict[str, tuple[type, dict[str, Any]]]] = {}
+
+    # Attributes #
+    _path: pathlib.Path | None = None
+    _is_open: bool = False
+    _mode: str = "r"
+    _swmr_mode: bool = False
+
+    schema: type[DeclarativeBase] | None = None
+
+    contents_file_type: type[ContentsFile] = ContentsFile
+    contents_file_name: str = "contents.sqlite3"
+    contents_file: ContentsFile | None = None
+
+    tables: dict[str, type[DeclarativeBase]] = {}
+
+    # Properties #
+    @property
+    def path(self) -> pathlib.Path:
+        """The path to the BaseCDFS."""
+        return self._path
+
+    @path.setter
+    def path(self, value: str | pathlib.Path) -> None:
+        if isinstance(value, pathlib.Path) or value is None:
+            self._path = value
+        else:
+            self._path = pathlib.Path(value)
+
+    @property
+    def is_open(self) -> bool:
+        return self._is_open
+
+    @property
+    def mode(self) -> str:
+        return self._mode
+
+    @property
+    def contents_path(self) -> pathlib.Path:
+        return self.path / self.contents_file_name
+
+    # Magic Methods #
+    # Construction/Destruction
+    def __init__(
+        self,
+        path: pathlib.Path | str | None = None,
+        mode: str = "r",
+        open_: bool = True,
+        load: bool = True,
+        create: bool = False,
+        update: bool = False,
+        contents_name: str | None = None,
+        *,
+        init: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        # Attributes #
+        self.tables = self.tables.copy()
+
+        # Parent Attributes #
+        super().__init__(init=False)
+
+        # Object Construction #
+        if init:
+            self.construct(
+                path=path,
+                mode=mode,
+                open_=open_,
+                load=load,
+                create=create,
+                update=update,
+                contents_name=contents_name,
+                **kwargs,
+            )
+
+    def __bool__(self) -> bool:
+        return self._is_open
+
+    # Instance Methods #
+    # Constructors/Destructors
+    def construct(
+        self,
+        path: pathlib.Path | str | None = None,
+        mode: str | None = None,
+        open_: bool = False,
+        load: bool = False,
+        create: bool = False,
+        update: bool = False,
+        contents_name: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Constructs this object.
+
+        Args:
+            path: The path for this proxy to wrap.
+            s_id: The subject ID.
+            studies_path: The parent directory to this XLTEK study proxy.
+            proxies: An iterable holding arrays/objects to store in this proxy.
+            mode: Determines if the contents of this proxy are editable or not.
+            update: Determines if this proxy will start_timestamp updating or not.
+            open_: Determines if the arrays will remain open after construction.
+            load: Determines if the arrays will be constructed.
+            **kwargs: The keyword arguments to create contained arrays.
+        """
+        if path is not None:
+            self.path = path
+
+        if mode is not None:
+            self._mode = mode
+            
+        if contents_name is not None:
+            self.contents_file_name = contents_name
+
+        super().construct(**kwargs)
+
+        if open_ or load or create:
+            self.open(load=load, create=create)
+
+    # File
+    def create(self, **kwargs) -> None:
+        self.path.mkdir(exist_ok=True)
+        self.open_contents_file(create=True, **kwargs)
+
+    def open(
+        self,
+        mode: str | None = None,
+        load: bool | None = None,
+        create: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        if not self._is_open:
+            if mode is not None:
+                self._mode = mode
+
+            if not self.path.is_dir():
+                if create:
+                    self.create(**kwargs)
+                else:
+                    raise ValueError("Contents file does not exist.")
+            else:
+                self.open_contents_file(create=create, **kwargs)
+            self._is_open = True
+
+            if load:
+                self.load_components()
+
+    def close(self):
+        if self.contents_file is not None:
+            self.contents_file.close()
+        self._is_open = False
+        return True
+
+    async def close_async(self) -> bool:
+        if self.contents_file is not None:
+            await self.contents_file.close_async()
+        self._is_open = False
+        return True
+
+    # Contents File
+    def open_contents_file(
+        self,
+        create: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        if not self.contents_path.is_file() and not create:
+            raise ValueError("Contents file does not exist.")
+        elif self.contents_file is None:
+            self.contents_file = self.contents_file_type(
+                path=self.contents_path,
+                schema=self.schema,
+                open_=True,
+                create=create,
+                **kwargs,
+            )
+        else:
+            self.contents_file.open(**kwargs)
+
+    # Components
+    def build_tables(self) -> None:
+        for component in self.components.values():
+            component.build_tables()
+
+    def load_components(self) -> None:
+        for component in self.components.values():
+            component.load()

@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ....header import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -55,37 +55,7 @@ class BaseMetaInformationTable(BaseTable):
                 result.update(entry, **kwargs)
 
     @classmethod
-    @singlekwargdispatch(kwarg="session")
     async def create_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-        entry: dict[str, Any] | None = None,
-        begin: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @classmethod
-    @create_information_async.__wrapped__.register(async_sessionmaker)
-    async def _create_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession],
-        entry: dict[str, Any] | None = None,
-        begin: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        statement = lambda_stmt(lambda: select(cls))
-        async with session() as async_session:
-            async with async_session.begin():
-                result = (await async_session.execute(statement)).scalar()
-                if result is None:
-                    await cls.insert_async(session=async_session, entry=entry, as_entry=True, begin=False, **kwargs)
-                else:
-                    result.update(entry, **kwargs)
-
-    @classmethod
-    @create_information_async.__wrapped__.register(AsyncSession)
-    async def _create_information_async(
         cls,
         session: AsyncSession,
         entry: dict[str, Any] | None = None,
@@ -117,30 +87,7 @@ class BaseMetaInformationTable(BaseTable):
         return (result.as_entry() if as_entry else result) if result is not None else {}
 
     @classmethod
-    @singlekwargdispatch(kwarg="session")
     async def get_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-        as_entry: bool = True,
-    ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @classmethod
-    @get_information_async.__wrapped__.register(async_sessionmaker)
-    async def _get_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession],
-        as_entry: bool = True,
-    ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
-        statement = lambda_stmt(lambda: select(cls))
-        async with session() as async_session:
-            result = (await async_session.execute(statement)).scalar()
-
-        return (result.as_entry() if as_entry else result) if result is not None else {}
-
-    @classmethod
-    @get_information_async.__wrapped__.register(AsyncSession)
-    async def _get_information_async(
         cls,
         session: AsyncSession,
         as_entry: bool = True,
@@ -163,33 +110,7 @@ class BaseMetaInformationTable(BaseTable):
             session.execute(lambda_stmt(lambda: select(cls))).scalar().update(entry, **kwargs)
 
     @classmethod
-    @singlekwargdispatch(kwarg="session")
     async def set_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-        entry: dict[str, Any] | None = None,
-        begin: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @classmethod
-    @set_information_async.__wrapped__.register(async_sessionmaker)
-    async def _set_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession],
-        entry: dict[str, Any] | None = None,
-        begin: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        statement = lambda_stmt(lambda: select(cls))
-        async with session() as async_session:
-            async with async_session.begin():
-                (await async_session.execute(statement)).scalar().update(entry, **kwargs)
-
-    @classmethod
-    @set_information_async.__wrapped__.register(AsyncSession)
-    async def _set_information_async(
         cls,
         session: AsyncSession,
         entry: dict[str, Any] | None = None,

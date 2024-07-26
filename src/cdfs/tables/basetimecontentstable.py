@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ....header import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -76,6 +76,16 @@ class BaseTimeContentsTable(BaseContentsTable):
         return kwargs
 
     @classmethod
+    def get_tz_offsets_distinct(cls, session: Session) -> tuple | None:
+        offsets = session.execute(lambda_stmt(lambda: select(cls.tz_offset).distinct()))
+        return None if offsets is None else tuple(offsets)
+
+    @classmethod
+    async def get_tz_offsets_distinct_async(cls, session: AsyncSession) -> tuple | None:
+        offsets = await session.execute(lambda_stmt(lambda: select(cls.tz_offset).distinct()))
+        return None if offsets is None else tuple(offsets)
+
+    @classmethod
     def get_start_datetime(cls, session: Session) -> Timestamp | None:
         offset, nanostamp_ = session.execute(lambda_stmt(lambda: select(cls.tz_offset, func.min(cls.start)))).first()
         if nanostamp_ is None:
@@ -86,31 +96,7 @@ class BaseTimeContentsTable(BaseContentsTable):
             return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
 
     @classmethod
-    @singlekwargdispatch(kwarg="session")
-    async def get_start_datetime_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-    ) -> Timestamp | None:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @classmethod
-    @get_start_datetime_async.__wrapped__.register(async_sessionmaker)
-    async def _get_start_datetime_async(cls, session: async_sessionmaker[AsyncSession]) -> Timestamp | None:
-        statement = lambda_stmt(lambda: select(cls.tz_offset, func.min(cls.start)))
-        async with session() as async_session:
-            results = await async_session.execute(statement)
-        
-        offset, nanostamp_ = results.first()
-        if nanostamp_ is None:
-            return None
-        elif offset is None:
-            return Timestamp.fromnanostamp(nanostamp_)
-        else:
-            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
-
-    @classmethod
-    @get_start_datetime_async.__wrapped__.register(AsyncSession)
-    async def _get_start_datetime_async(cls, session: AsyncSession) -> Timestamp | None:
+    async def get_start_datetime_async(cls, session: AsyncSession) -> Timestamp | None:
         results = await session.execute(lambda_stmt(lambda: select(cls.tz_offset, func.min(cls.start))))
         offset, nanostamp_ = results.first()
         if nanostamp_ is None:

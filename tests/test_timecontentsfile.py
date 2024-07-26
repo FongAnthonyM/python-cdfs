@@ -16,19 +16,15 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 import asyncio
-import abc
 import datetime
 import pathlib
-from typing import Any
 
 # Third-Party Packages #
 import pytest
-from dspobjects.time import nanostamp
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
-from src.cdfs.contentsfile.sqlite import *
 from .test_contentsfile import TestContentsFile
 
 
@@ -65,7 +61,7 @@ class TestTimeContentsFile(TestContentsFile):
     async def insert_async(self, path):
         db = self.class_(path=path)
         await db.create_file_async(echo=True)
-        session = AsyncSession(db.engine)
+        session = AsyncSession(db._engine)
         await db.contents.insert_async(
             session=session,
             as_entry=True,

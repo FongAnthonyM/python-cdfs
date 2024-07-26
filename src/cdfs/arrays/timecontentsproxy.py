@@ -19,7 +19,6 @@ import datetime
 from decimal import Decimal
 import pathlib
 from typing import Any
-from warnings import warn
 
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
@@ -28,7 +27,9 @@ from proxyarrays import BaseContainerFileTimeSeries, BaseDirectoryTimeSeries, Di
 import numpy as np
 
 # Local Packages #
-from ..contentsfile.sqlite import TimeContentsFile
+from ..components import TimeContentsCDFSComponent
+from ..tables import BaseTimeContentsTable
+from ..contentsfile import ContentsFile
 
 
 # Definitions #
@@ -521,15 +522,21 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         **kwargs: The keyword arguments to create contained arrays.
         init: Determines if this object will construct.
     """
+
+    # Class Attributes #
     default_proxy_type: type = TimeContentsNodeProxy
     default_node_type: type[TimeContentsNodeProxy] = TimeContentsNodeProxy
+
+    # Attributes #
+    cdfs_component: TimeContentsCDFSComponent | None = None
+    latest_update: int = 0
 
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        contents_file: TimeContentsFile | None = None,
+        cdfs_component: TimeContentsCDFSComponent | None = None,
         proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "r",
         update: bool = False,
@@ -538,10 +545,6 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         init: bool = True,
         **kwargs: Any,
     ) -> None:
-        # New Attributes #
-        self.contents_file: TimeContentsFile | None = None
-        self.latest_update: int = 0
-
         # Parent Attributes #
         super().__init__(init=False)
 
@@ -549,7 +552,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         if init:
             self.construct(
                 path=path,
-                contents_file=contents_file,
+                cdfs_component=cdfs_component,
                 proxies=proxies,
                 mode=mode,
                 update=update,
@@ -563,7 +566,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        contents_file: TimeContentsFile | None = None,
+        cdfs_component: TimeContentsCDFSComponent | None = None,
         proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "r",
         update: bool = False,
@@ -575,7 +578,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
         Args:
             path: The path for this proxy to wrap.
-            contents_file: A HDF5Dataset with the mapping information for creating the proxy structure.
+            table: A HDF5Dataset with the mapping information for creating the proxy structure.
             proxies: An iterable holding arrays/objects to store in this proxy.
             mode: Determines if the contents of this proxy are editable or not.
             update: Determines if this proxy will start_timestamp updating or not.
@@ -583,10 +586,10 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             build: Determines if the arrays will be constructed.
             **kwargs: The keyword arguments to create contained arrays.
         """
-        if contents_file is not None:
-            self.contents_file = contents_file
+        if cdfs_component is not None:
+            self.cdfs_component = cdfs_component
 
-        if self.contents_file is not None:
+        if self.cdfs_component is not None:
             try:
                 self.get_tzinfo()
             except:
@@ -605,8 +608,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             self.get_tzinfo()
 
         self.proxy_paths.clear()
-        with self.contents_file.create_session() as session:
-            entries = self.contents_file.contents.get_all(session=session, as_entries=True)
+        entries = self.cdfs_component.get_all(as_entries=True)
 
         for entry in entries:
             del entry["id"]
@@ -625,10 +627,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             **kwargs: The keyword arguments to create contained arrays.
         """
         self.proxy_paths.clear()
-        entries = await self.contents_file.contents.get_all_async(
-            session=self.contents_file.async_session_maker,
-            as_entries=True,
-        )
+        entries = await self.cdfs_component.get_all_async(as_entries=True)
 
         for entry in entries:
             del entry["id"]
@@ -646,13 +645,11 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             open_: Determines if the arrays will remain open after the update.
             **kwargs: The keyword arguments to create contained arrays.
         """
-        with self.contents_file.create_session() as session:
-            entries = self.contents_file.contents.get_from_update(
-                session=session,
-                update_id=self.latest_update,
-                inclusive=False,
-                as_entries=True,
-            )
+        entries = self.cdfs_component.get_from_update(
+            update_id=self.latest_update,
+            inclusive=False,
+            as_entries=True,
+        )
 
         if entries:
             for entry in entries:
@@ -671,8 +668,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             open_: Determines if the arrays will remain open after the update.
             **kwargs: The keyword arguments to create contained arrays.
         """
-        entries = await self.contents_file.contents.get_from_update_async(
-            session=self.contents_file.async_sessionmaker,
+        entries = await self.cdfs_component.get_from_update_async(
             update_id=self.latest_update,
             inclusive=False,
             as_entries=True,
@@ -694,5 +690,5 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         Returns:
             The tzinfo from the conetnes file.
         """
-        self.tzinfo = self.contents_file.get_meta_information()["tz_offset"]
+        self.tzinfo = self.cdfs_component.get_tz_offsets_distinct()[0]
         return self.tzinfo

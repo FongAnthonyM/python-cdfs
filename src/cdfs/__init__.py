@@ -13,4 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .structureobjects import *
+from .tables import *
+from .components import *
+from .contentsfile import ContentsFile
+from .basecdfs import BaseCDFS
