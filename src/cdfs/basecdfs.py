@@ -13,36 +13,21 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from abc import abstractmethod
-import datetime
 import pathlib
 from typing import ClassVar, Any
 
 # Third-Party Packages #
 from baseobjects import BaseComposite
 from baseobjects.cachingtools import CachingObject, timed_keyless_cache
-from dspobjects.time import Timestamp
 from sqlalchemy.orm import DeclarativeBase, Session
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 # Local Packages #
-from cdfs.contentsfile import ContentsFile
+from .contentsfile import ContentsFile
 
 
 # Definitions #
 # Classes #
-class ContentsFileAsyncSchema(AsyncAttrs, DeclarativeBase):
-    pass
-
-
-class MetaInformationTable(BaseMetaInformationTable, ContentsFileAsyncSchema):
-    pass
-
-
-class ContentsTable(BaseContentsTable, ContentsFileAsyncSchema):
-    pass
-
-
 class BaseCDFS(CachingObject, BaseComposite):
 
     # Class Attributes #
@@ -165,9 +150,11 @@ class BaseCDFS(CachingObject, BaseComposite):
             self.open(load=load, create=create)
 
     # File
-    def create(self, **kwargs) -> None:
+    def create(self, build_tables: bool = True, **kwargs) -> None:
         self.path.mkdir(exist_ok=True)
         self.open_contents_file(create=True, **kwargs)
+        if build_tables:
+            self.build_tables()
 
     def open(
         self,

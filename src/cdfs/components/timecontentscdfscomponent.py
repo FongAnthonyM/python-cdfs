@@ -36,7 +36,6 @@ class TimeContentsCDFSComponent(BaseTableCDFSComponent):
     _table: type[BaseTimeContentsTable] | None = None
 
     proxy_type: type[TimeContentsProxy] = TimeContentsProxy
-    _data: TimeContentsProxy | None = None
 
     # Properties #
     @property
@@ -47,18 +46,7 @@ class TimeContentsCDFSComponent(BaseTableCDFSComponent):
     def end_datetime(self):
         return self.get_end_datetime()
 
-    @property
-    def data(self) -> TimeContentsProxy | None:
-        try:
-            return self._data()
-        except TypeError:
-            return None
-
     # Instance Methods #
-    # File
-    def load(self, *args: Any, **kwargs: Any) -> None:
-        self.construct_data(*args, **kwargs)
-
     # Contents
     def correct_contents(
         self,
@@ -143,10 +131,10 @@ class TimeContentsCDFSComponent(BaseTableCDFSComponent):
         else:
             return await self.table.get_all_nanostamps_async(session=session)
 
-    # BaseCDFS Data
-    def construct_data(self, swmr: bool = True, **kwargs):
+    # Contents Proxy #
+    def create_contents_proxy(self, swmr: bool = True, **kwargs):
         composite = self._composite()
-        self._data = self.proxy_type(
+        return self.proxy_type(
             path=composite.path,
             table=composite.table,
             mode=composite.mode,

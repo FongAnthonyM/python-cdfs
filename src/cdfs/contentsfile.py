@@ -21,7 +21,7 @@ from typing import Any
 from baseobjects.cachingtools import CachingObject
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
-from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncEngine, AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_sessionmaker
 
 # Local Packages #
 
@@ -183,5 +183,3 @@ class ContentsFile(CachingObject):
         if not self.is_open:
             raise IOError("File not open")
         return AsyncSession(self._async_engine, *args, **kwargs) if args or kwargs else self._async_session_maker()
-
-

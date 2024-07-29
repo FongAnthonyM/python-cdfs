@@ -18,7 +18,7 @@ from collections.abc import Iterable
 import datetime
 from decimal import Decimal
 import pathlib
-from typing import Any
+from typing import Any, Optional
 
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
@@ -27,60 +27,21 @@ from proxyarrays import BaseContainerFileTimeSeries, BaseDirectoryTimeSeries, Di
 import numpy as np
 
 # Local Packages #
-from ..components import TimeContentsCDFSComponent
-from ..tables import BaseTimeContentsTable
-from ..contentsfile import ContentsFile
 
 
 # Definitions #
 # Classes #
 class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
+    # Attributes #
     file_type: type | None = None
 
-    # Magic Methods #
-    # Construction/Destruction
-    def __init__(
-        self,
-        file: Any = None,
-        mode: str | None = "r",
-        shape: tuple[int] | None = None,
-        axis: int | None = None,
-        sample_rate: float | str | Decimal | None = None,
-        sample_period: float | str | Decimal | None = None,
-        start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        tzinfo: datetime.tzinfo | None = None,
-        *,
-        path: str | pathlib.Path | None = None,
-        init: bool = True,
-        **kwargs: Any,
-    ) -> None:
-        # New Attributes #
-        self._shape: tuple[int] | None = None
-        self._sample_rate: Decimal | None = None
-        self._tzinfo: datetime.tzinfo | None = None
-        self._start: int | None = None
-        self._end: int | None = None
+    _shape: tuple[int] | None = None
+    _sample_rate: Decimal | None = None
+    _tzinfo: datetime.tzinfo | None = None
+    _start: int | None = None
+    _end: int | None = None
 
-        # Parent Attributes #
-        super().__init__(init=False)
-
-        # Object Construction #
-        if init:
-            self.construct(
-                file=file,
-                path=path,
-                shape=shape,
-                axis=axis,
-                sample_rate=sample_rate,
-                sample_period=sample_period,
-                start=start,
-                end=end,
-                tzinfo=tzinfo,
-                mode=mode,
-                **kwargs,
-            )
-
+    # Properties #
     @property
     def is_open(self) -> bool:
         return self._is_open()
@@ -108,7 +69,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
     def start_timestamp(self) -> float | None:
         """The start timestamp of this proxy."""
         start = self.get_start_nanostamp()
-        return float(start) / 10**9 if start is not None else None
+        return float(start) / 10 ** 9 if start is not None else None
 
     @property
     def end_datetime(self) -> Timestamp | None:
@@ -147,6 +108,43 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         if not isinstance(value, Decimal):
             value = Decimal(value)
         self._sample_rate = 1 / value
+
+    # Magic Methods #
+    # Construction/Destruction
+    def __init__(
+        self,
+        file: Any = None,
+        mode: str | None = "r",
+        shape: tuple[int] | None = None,
+        axis: int | None = None,
+        sample_rate: float | str | Decimal | None = None,
+        sample_period: float | str | Decimal | None = None,
+        start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
+        end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
+        tzinfo: datetime.tzinfo | None = None,
+        *,
+        path: str | pathlib.Path | None = None,
+        init: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        # Parent Attributes #
+        super().__init__(init=False)
+
+        # Object Construction #
+        if init:
+            self.construct(
+                file=file,
+                path=path,
+                shape=shape,
+                axis=axis,
+                sample_rate=sample_rate,
+                sample_period=sample_period,
+                start=start,
+                end=end,
+                tzinfo=tzinfo,
+                mode=mode,
+                **kwargs,
+            )
 
     # Instance Methods
     # Constructors/Destructors
@@ -383,47 +381,11 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
 
 
 class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
-    default_node_type: type = None
-    default_leaf_type: type[BaseTimeContentsLeafContainer] | None = None
+    # Attributes #
+    node_type: type | None = None
+    leaf_type: type[BaseTimeContentsLeafContainer] | None = None
 
-    # Magic Methods #
-    # Construction/Destruction
-    def __init__(
-        self,
-        path: pathlib.Path | str | None = None,
-        proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
-        axis: int | None = None,
-        precise: bool | None = None,
-        tzinfo: datetime.tzinfo | None = None,
-        mode: str = "r",
-        update: bool = True,
-        open_: bool = False,
-        build: bool = True,
-        init: bool = True,
-        **kwargs: Any,
-    ) -> None:
-        # New Attributes #
-        self.node_type: type | None = self.default_node_type
-        self.leaf_type: type | None = self.default_leaf_type
-
-        # Parent Attributes #
-        super().__init__(init=False)
-
-        # Object Construction #
-        if init:
-            self.construct(
-                path=path,
-                proxies=proxies,
-                axis=axis,
-                precise=precise,
-                tzinfo=tzinfo,
-                mode=mode,
-                update=update,
-                open_=open_,
-                build=build,
-                **kwargs,
-            )
-
+    # Instance Methods #
     def update_child(
         self,
         path: str | list[str],
@@ -525,10 +487,10 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
     # Class Attributes #
     default_proxy_type: type = TimeContentsNodeProxy
-    default_node_type: type[TimeContentsNodeProxy] = TimeContentsNodeProxy
+    node_type: type[TimeContentsNodeProxy] = TimeContentsNodeProxy
 
     # Attributes #
-    cdfs_component: TimeContentsCDFSComponent | None = None
+    cdfs_component: Optional["TimeContentsCDFSComponent"] = None
     latest_update: int = 0
 
     # Magic Methods #
@@ -536,7 +498,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        cdfs_component: TimeContentsCDFSComponent | None = None,
+        cdfs_component: Optional["TimeContentsCDFSComponent"] = None,
         proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "r",
         update: bool = False,
@@ -566,7 +528,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        cdfs_component: TimeContentsCDFSComponent | None = None,
+        cdfs_component: Optional["TimeContentsCDFSComponent"] = None,
         proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "r",
         update: bool = False,
@@ -597,6 +559,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
         super().construct(path=path, proxies=proxies, mode=mode, update=update, open_=open_, build=build, **kwargs)
 
+    # Proxy
     def construct_proxies(self, open_=False, **kwargs: Any) -> None:
         """Constructs the arrays for this object.
 
@@ -684,6 +647,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
             self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
+    # Time Information
     def get_tzinfo(self) -> datetime.tzinfo:
         """Gets the tzinfo from the contents file.
 
@@ -692,3 +656,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         """
         self.tzinfo = self.cdfs_component.get_tz_offsets_distinct()[0]
         return self.tzinfo
+
+
+# Assign Cyclic Definition
+TimeContentsNodeProxy.node_type = TimeContentsNodeProxy
