@@ -19,7 +19,7 @@ from typing import Any, Iterable
 # Third-Party Packages #
 from sqlalchemy import Result
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
 from ..tables import BaseTable
@@ -41,7 +41,7 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
     """
 
     # Attributes #
-    table_name: str = "meta_information"
+    table_name: str = ""
     _table: type[BaseTable] | None = None
 
     # Properties #
@@ -243,14 +243,14 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
             async with self.create_async_session() as session:
                 await self.table.delete_item_async(session, item, begin)
 
-    def get_last_update_id(self, session: Session | None) -> int | None:
+    def get_last_update_id(self, session: Session | None = None) -> int | None:
         if session is not None:
             return self.table.get_last_update_id(session)
         else:
             with self.create_session() as session:
                 return self.table.get_last_update_id(session)
 
-    async def get_last_update_id_async(self, session: AsyncSession) -> int | None:
+    async def get_last_update_id_async(self, session: AsyncSession | None = None) -> int | None:
         if session is not None:
             return await self.table.get_last_update_id_async(session)
         else:
@@ -295,7 +295,7 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
     async def correct_contents_async(
         self,
         path: pathlib.Path,
-        session: async_sessionmaker[AsyncSession] | AsyncSession | None = None,
+        session: AsyncSession | None = None,
         begin: bool = False,
     ) -> None:
         """Asynchronously correct the contents of the file."""
