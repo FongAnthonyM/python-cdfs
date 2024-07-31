@@ -67,6 +67,19 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         if init:
             self.construct(composite, table_name, **kwargs)
 
+    # Pickling
+    def __getstate__(self) -> dict[str, Any]:
+        """Creates a dictionary of attributes which can be used to rebuild this object
+
+        Returns:
+            dict: A dictionary of this object's attributes.
+        """
+        state = super().__getstate__()
+        for name in ("_table",):
+            if name in state:
+                del state[name]
+        return state
+
     # Instance Methods #
     # Constructors/Destructors
     def construct(self, composite: Any = None, table_name: str | None = None, **kwargs: Any) -> None:

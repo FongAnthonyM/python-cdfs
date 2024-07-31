@@ -81,7 +81,7 @@ class BaseCDFS(CachingObject, BaseComposite):
         open_: bool = True,
         load: bool = True,
         create: bool = False,
-        update: bool = False,
+        build: bool = True,
         contents_name: str | None = None,
         *,
         init: bool = True,
@@ -101,7 +101,7 @@ class BaseCDFS(CachingObject, BaseComposite):
                 open_=open_,
                 load=load,
                 create=create,
-                update=update,
+                build=build,
                 contents_name=contents_name,
                 **kwargs,
             )
@@ -115,10 +115,10 @@ class BaseCDFS(CachingObject, BaseComposite):
         self,
         path: pathlib.Path | str | None = None,
         mode: str | None = None,
-        open_: bool = False,
-        load: bool = False,
+        open_: bool = True,
+        load: bool = True,
         create: bool = False,
-        update: bool = False,
+        build: bool = True,
         contents_name: str | None = None,
         **kwargs: Any,
     ) -> None:
@@ -147,19 +147,13 @@ class BaseCDFS(CachingObject, BaseComposite):
         super().construct(**kwargs)
 
         if open_ or load or create:
-            self.open(load=load, create=create)
+            self.open(load=load, create=create, build=build)
 
     # File
-    def create(self, build: bool = True, **kwargs) -> None:
-        self.path.mkdir(exist_ok=True)
-        self.open_contents_file(create=True, **kwargs)
-        if build and self._mode in {"a", "w"}:
-            self.build_tables()
-
     def open(
         self,
         mode: str | None = None,
-        load: bool | None = None,
+        load: bool = True,
         create: bool = False,
         build: bool = True,
         **kwargs: Any,
@@ -170,11 +164,15 @@ class BaseCDFS(CachingObject, BaseComposite):
 
             if not self.path.is_dir():
                 if create:
-                    self.create(build=build, **kwargs)
+                    self.path.mkdir(exist_ok=True)
                 else:
-                    raise ValueError("Contents file does not exist.")
-            else:
-                self.open_contents_file(create=create, **kwargs)
+                    raise ValueError("CDFS does not exist.")
+
+            if self.contents_path.exists():
+                self.open_contents_file(**kwargs)
+            elif create:
+                self.open_contents_file(create=True, build=build, **kwargs)
+
             self._is_open = True
 
             if load:
@@ -193,10 +191,18 @@ class BaseCDFS(CachingObject, BaseComposite):
         return True
 
     # Contents File
-    def open_contents_file(self, create: bool = False, **kwargs: Any) -> None:
-        if not self.contents_path.is_file() and not create:
-            raise ValueError("Contents file does not exist.")
-        elif self.contents_file is None:
+    def open_contents_file(self, create: bool = False, build: bool = True, **kwargs: Any) -> None:
+        if self.contents_file is not None:
+            self.contents_file.open(**kwargs)
+        elif self.contents_path.is_file():
+            self.contents_file = self.contents_file_type(
+                path=self.contents_path,
+                schema=self.schema,
+                open_=True,
+                create=False,
+                **kwargs,
+            )
+        elif not self.contents_path.is_file() and create:
             self.contents_file = self.contents_file_type(
                 path=self.contents_path,
                 schema=self.schema,
@@ -204,8 +210,11 @@ class BaseCDFS(CachingObject, BaseComposite):
                 create=create,
                 **kwargs,
             )
+            if build and self._mode in {"a", "w"}:
+                self.build_tables()
         else:
-            self.contents_file.open(**kwargs)
+            raise ValueError("Contents file does not exist.")
+
 
     # Components
     def build_tables(self) -> None:

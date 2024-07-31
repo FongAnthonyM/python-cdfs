@@ -86,7 +86,7 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
     # Table
     def build_tables(self, *args: Any, **kwargs: Any) -> None:
         """Build the table for the component."""
-        self.save_cached_meta_information()
+        self.create_meta_information(entry=self._meta_information, begin=True)
 
     # Meta Information
     def create_meta_information(

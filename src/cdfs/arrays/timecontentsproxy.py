@@ -654,7 +654,8 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         Returns:
             The tzinfo from the conetnes file.
         """
-        self.tzinfo = self.cdfs_component.get_tz_offsets_distinct()[0]
+        tz_offset = self.cdfs_component.get_tz_offsets_distinct()[0][0]
+        self.tzinfo = datetime.timezone(datetime.timedelta(seconds=tz_offset))  # Make this a property in a parent
         return self.tzinfo
 
 

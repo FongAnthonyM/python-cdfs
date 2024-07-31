@@ -89,6 +89,31 @@ class ContentsFile(CachingObject):
         if init:
             self.construct(path, schema, open_, create, **kwargs)
 
+    # Pickling
+    def __getstate__(self) -> dict[str, Any]:
+        """Creates a dictionary of attributes which can be used to rebuild this object
+
+        Returns:
+            dict: A dictionary of this object's attributes.
+        """
+        state = super().__getstate__()
+        state["is_open"] = self.is_open
+        for name in ("_engine", "_async_engine", "_session_maker", "_async_session_maker"):
+            if name in state:
+                del state[name]
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        """Builds this object based on a dictionary of corresponding attributes.
+
+        Args:
+            state: The attributes to build this object from.
+        """
+        was_open = state.pop("is_open")
+        super().__setstate__(state=state)
+        if was_open:
+            self.open()
+
     # Instance Methods #
     # Constructors/Destructors
     def construct(
@@ -144,6 +169,7 @@ class ContentsFile(CachingObject):
         if self._engine is not None:
             self._engine.dispose()
             self._engine = None
+        self._session_maker = None
         if self._async_engine is not None:
             run(self._async_engine.dispose())
             self._async_engine = None

@@ -136,10 +136,8 @@ class TimeContentsCDFSComponent(BaseTableCDFSComponent):
         composite = self._composite()
         return self.proxy_type(
             path=composite.path,
-            table=composite.table,
+            cdfs_component=self,
             mode=composite.mode,
             swmr=swmr,
             **kwargs,
         )
-
-
