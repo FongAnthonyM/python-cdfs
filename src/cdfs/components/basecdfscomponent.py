@@ -70,9 +70,27 @@ class BaseCDFSComponent(BaseComponent):
 
     # Session
     def create_session(self, *args: Any, **kwargs: Any) -> Session:
+        """Creates a new SQLAlchemy session.
+
+        Args:
+            *args: Positional arguments for session creation.
+            **kwargs: Keyword arguments for session creation.
+
+        Returns:
+            Session: A new SQLAlchemy session.
+        """
         return self._composite().contents_file.create_session(*args, **kwargs)
 
     def create_async_session(self, *args: Any, **kwargs: Any) -> AsyncSession:
+        """Creates a new asynchronous SQLAlchemy session.
+
+        Args:
+            *args : Positional arguments for session creation.
+            **kwargs: Keyword arguments for session creation.
+
+        Returns:
+            AsyncSession: A new asynchronous SQLAlchemy session.
+        """
         return self._composite().contents_file.create_async_session(*args, **kwargs)
 
     # Table

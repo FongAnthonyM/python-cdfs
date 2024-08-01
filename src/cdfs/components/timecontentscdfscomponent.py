@@ -32,6 +32,16 @@ from .basetablecdfscomponent import BaseTableCDFSComponent
 # Definitions #
 # Classes #
 class TimeContentsCDFSComponent(BaseTableCDFSComponent):
+    """A component for managing time-based contents in a CDFS.
+
+    Attributes:
+        _table: The table class associated with this component.
+        proxy_type: The proxy type for time contents.
+
+    Properties:
+        start_datetime: Gets the start datetime.
+        end_datetime: Gets the end datetime.
+    """
     # Attributes #
     _table: type[BaseTimeContentsTable] | None = None
 
@@ -132,7 +142,16 @@ class TimeContentsCDFSComponent(BaseTableCDFSComponent):
             return await self.table.get_all_nanostamps_async(session=session)
 
     # Contents Proxy #
-    def create_contents_proxy(self, swmr: bool = True, **kwargs):
+    def create_contents_proxy(self, swmr: bool = True, **kwargs) -> TimeContentsProxy:
+        """Creates a contents proxy for the CDFS component.
+
+        Args:
+            swmr: If True, enables single-writer multiple-reader mode. Defaults to True.
+            **kwargs: Additional keyword arguments for the proxy.
+
+        Returns:
+            The created contents proxy.
+        """
         composite = self._composite()
         return self.proxy_type(
             path=composite.path,

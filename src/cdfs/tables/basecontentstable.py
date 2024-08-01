@@ -29,12 +29,30 @@ from .basetable import BaseTable
 # Definitions #
 # Classes #
 class BaseContentsTable(BaseTable):
+    """The specification for a table which tracks the contents of multiple files.
+
+    This class defines a table which tracks the contents of multiple files and methods for formatting entry keyword
+    arguments, correcting contents, and converting entries to dictionaries.
+
+    Attributes:
+        __tablename__: The name of the table.
+        __mapper_args__: Mapper arguments for SQLAlchemy.
+        path: The path of the content.
+        axis: The axis of the content.
+        shape: The shape of the content.
+        file_type: The type of file which this table will track.
+    """
+
+    # Class Attributes #
     __tablename__ = "contents"
     __mapper_args__ = {"polymorphic_identity": "contents"}
+
+    # Columns #
     path: Mapped[str]
     axis: Mapped[int]
     shape: Mapped[str]
 
+    # Attributes #
     file_type: type | None = None
 
     # Class Methods #

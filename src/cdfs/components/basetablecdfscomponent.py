@@ -29,13 +29,16 @@ from .basecdfscomponent import BaseCDFSComponent
 # Definitions #
 # Classes #
 class BaseTableCDFSComponent(BaseCDFSComponent):
-    """A basic component object.
+    """A basic component for a CDFS object which is meant to interact with a table.
 
     Attributes:
         _composite: A weak reference to the object which this object is a component of.
+        table_name: The name of the table.
+        _table: The table class.
 
     Args:
         composite: The object which this object is a component of.
+        table_name: The name of the table.
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for inheritance.
     """
@@ -47,6 +50,7 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
     # Properties #
     @property
     def table(self) -> type[BaseTable]:
+        """Gets the table class."""
         if self._table is None:
             self._table = self._composite().tables[self.table_name]
         return self._table
@@ -131,6 +135,16 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Inserts an item into the table.
+
+        Args:
+            item: The item to insert. Defaults to None.
+            entry: A dictionary representing the entry to insert. Defaults to None.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            as_entry: If True, creates the item from the entry dictionary. Defaults to False.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         if session is not None:
             self.table.insert(session, item, entry, as_entry, begin, **kwargs)
         else:

@@ -18,10 +18,9 @@ from typing import Any
 import uuid
 
 # Third-Party Packages #
-from baseobjects import singlekwargdispatch
 from sqlalchemy import Uuid, Result, select, lambda_stmt, func
 from sqlalchemy.orm import mapped_column, Session
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import BigInteger
 
 # Local Packages #
@@ -41,6 +40,8 @@ class BaseTable:
     Class Attributes:
         __tablename__: The name of the table.
         __mapper_args__: Mapper arguments for SQLAlchemy ORM configurations.
+
+    Columns:
         id: The primary key column of the table, using UUIDs.
         update_id: A column to track updates, using big integers.
     """
@@ -48,6 +49,8 @@ class BaseTable:
     # Class Attributes #
     __tablename__: str = "base"
     __mapper_args__: dict[str, str] = {"polymorphic_identity": "base"}
+
+    # Columns #
     id = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     update_id = mapped_column(BigInteger, default=0)
 
@@ -109,6 +112,16 @@ class BaseTable:
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Inserts an item into the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            item: The item to insert. Defaults to None.
+            entry: A dictionary representing the entry to insert. Defaults to None.
+            as_entry: If True, creates the item from the entry dictionary. Defaults to False.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         if as_entry:
             item = cls.item_from_entry(**(({} if entry is None else entry) | kwargs))
 
@@ -356,11 +369,22 @@ class BaseTable:
 
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
+        """Updates the row of the table with the provided dictionary or keyword arguments.
+
+        Args:
+            dict_: A dictionary of attributes/columns to update. Defaults to None.
+            **kwargs: Additional keyword arguments for the attributes to update.
+        """
         dict_ = ({} if dict_ is None else dict_) | kwargs
         if (update_id := dict_.get("update_id", None)) is not None:
             self.update_id = update_id
 
     def as_dict(self) -> dict[str, Any]:
+        """Creates a dictionary with all the contents of the row
+
+        Returns:
+            A dictionary representation of the row.
+        """
         return {"id": self.id, "update_id": self.update_id}
 
     def as_entry(self) -> dict[str, Any]:

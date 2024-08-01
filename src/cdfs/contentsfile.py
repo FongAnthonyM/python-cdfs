@@ -29,12 +29,21 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 # Definitions #
 # Classes #
 class ContentsFile(CachingObject):
-    """An object interface for the contents file.
+    """Manages the contents file including creating, opening, and modifying the database.
 
     Attributes:
+        _path: The file path to the database.
+        _engine: The SQLAlchemy engine for synchronous operations.
+        _async_engine: The SQLAlchemy engine for asynchronous operations.
+        session_maker_kwargs: Keyword arguments for the synchronous session maker.
+        _session_maker: Factory for creating synchronous sessions.
+        async_session_maker_kwargs: Keyword arguments for the asynchronous session maker.
+        _async_session_maker: Factory for creating asynchronous sessions.
+        schema: The database schema class.
 
-    Args:
-
+    Properties:
+        path: Gets or sets the file path to the database.
+        is_open: Checks if the database connection is open.
     """
     # Attributes #
     _path: pathlib.Path | None = None

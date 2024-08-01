@@ -29,6 +29,31 @@ from .contentsfile import ContentsFile
 # Definitions #
 # Classes #
 class BaseCDFS(CachingObject, BaseComposite):
+    """Base class for a Continuous Data File System (CDFS).
+
+    This class provides the foundational structure and operations for managing a composite distributed file system.
+    It integrates caching mechanisms and composite design patterns to handle various components and their interactions.
+
+    Attributes:
+        default_component_types: Default types for components.
+
+    Attributes:
+        _path: The file path to the CDFS.
+        _is_open: Indicates if the CDFS is currently open.
+        _mode: The mode in which the CDFS is opened (e.g., 'r' for read, 'w' for write).
+        _swmr_mode: Indicates if Single-Writer-Multiple-Reader mode is enabled.
+        schema: The database schema class.
+        contents_file_type: The type of the contents file.
+        contents_file_name: The name of the contents file.
+        contents_file: The contents file object.
+        tables: A dictionary of table names to table classes.
+
+    Properties:
+        path: Gets or sets the file path to the CDFS.
+        is_open: Checks if the CDFS is open.
+        mode: Gets the mode in which the CDFS is opened.
+        contents_path: Gets the path to the contents file.
+    """
 
     # Class Attributes #
     default_component_types: ClassVar[dict[str, tuple[type, dict[str, Any]]]] = {}
