@@ -104,9 +104,9 @@ class BaseCDFS(CachingObject, BaseComposite):
         path: pathlib.Path | str | None = None,
         mode: str = "r",
         open_: bool = True,
-        load: bool = True,
         create: bool = False,
         build: bool = True,
+        load: bool = True,
         contents_name: str | None = None,
         *,
         init: bool = True,
@@ -124,8 +124,8 @@ class BaseCDFS(CachingObject, BaseComposite):
                 path=path,
                 mode=mode,
                 open_=open_,
-                load=load,
                 create=create,
+                load=load,
                 build=build,
                 contents_name=contents_name,
                 **kwargs,
@@ -141,9 +141,9 @@ class BaseCDFS(CachingObject, BaseComposite):
         path: pathlib.Path | str | None = None,
         mode: str | None = None,
         open_: bool = True,
-        load: bool = True,
         create: bool = False,
         build: bool = True,
+        load: bool = True,
         contents_name: str | None = None,
         **kwargs: Any,
     ) -> None:
@@ -178,9 +178,9 @@ class BaseCDFS(CachingObject, BaseComposite):
     def open(
         self,
         mode: str | None = None,
-        load: bool = True,
         create: bool = False,
         build: bool = True,
+        load: bool = True,
         **kwargs: Any,
     ) -> None:
         if not self._is_open:
@@ -239,7 +239,6 @@ class BaseCDFS(CachingObject, BaseComposite):
                 self.build_tables()
         else:
             raise ValueError("Contents file does not exist.")
-
 
     # Components
     def build_tables(self) -> None:
