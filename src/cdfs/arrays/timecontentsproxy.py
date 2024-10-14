@@ -438,23 +438,24 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
         """
         path = path.split('/') if isinstance(path, str) else path.copy()
 
-        child_path = self.path / path.pop(0)
-        proxy = self.proxy_paths.get(child_path, None)
-        if proxy is None:
-            if path:
-                proxy = self.node_type(path=child_path, mode=self.mode, open_=open_, build=False)
-            else:
-                proxy = self.leaf_type(path=child_path, mode=self.mode, open_=open_,  **kwargs)
-            self.proxies.append(proxy)
-            self.proxy_paths[child_path] = proxy
-
         if path:
-            proxy.update_child(path=path, open_=open_, **kwargs)
-        else:
-            proxy.update_defaults(**kwargs)
+            child_path = self.path / path.pop(0)
+            proxy = self.proxy_paths.get(child_path, None)
+            if proxy is None:
+                if path:
+                    proxy = self.node_type(path=child_path, mode=self.mode, open_=open_, build=False)
+                else:
+                    proxy = self.leaf_type(path=child_path, mode=self.mode, open_=open_,  **kwargs)
+                self.proxies.append(proxy)
+                self.proxy_paths[child_path] = proxy
 
-        self.proxies.sort(key=lambda p: p.start_timestamp)
-        self.clear_caches()
+            if path:
+                proxy.update_child(path=path, open_=open_, **kwargs)
+            else:
+                proxy.update_defaults(**kwargs)
+
+            self.proxies.sort(key=lambda p: p.start_timestamp)
+            self.clear_caches()
 
     def update_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs: Any) -> None:
         """Creates child arrays the given child paths.
@@ -469,12 +470,13 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
         for path_kwargs in paths:
             path = path_kwargs["path"]
             path = path_kwargs["path"] = path.split('/') if isinstance(path, str) else path.copy()
-            child_path = self.path / path.pop(0)
-            info = children_info.get(child_path, None)
-            if info is None:
-                children_info[child_path] = {"kwargs": path_kwargs | {"path": child_path}, "children": [path_kwargs]}
-            else:
-                info["children"].append(path_kwargs)
+            if path:
+                child_path = self.path / path.pop(0)
+                info = children_info.get(child_path, None)
+                if info is None:
+                    children_info[child_path] = {"kwargs": path_kwargs | {"path": child_path}, "children": [path_kwargs]}
+                else:
+                    info["children"].append(path_kwargs)
 
         for child_path, info in children_info.items():
             proxy = self.proxy_paths.get(child_path, None)
