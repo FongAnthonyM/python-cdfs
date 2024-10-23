@@ -50,7 +50,11 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
     # Properties #
     @property
     def table(self) -> type[BaseTable]:
-        """Gets the table class."""
+        """Gets the table class.
+
+        Returns:
+            type[BaseTable]: The table class.
+        """
         if self._table is None:
             self._table = self._composite().tables[self.table_name]
         return self._table
@@ -73,7 +77,7 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
 
     # Pickling
     def __getstate__(self) -> dict[str, Any]:
-        """Creates a dictionary of attributes which can be used to rebuild this object
+        """Creates a dictionary of attributes which can be used to rebuild this object.
 
         Returns:
             dict: A dictionary of this object's attributes.
@@ -91,7 +95,8 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
 
         Args:
             composite: The object which this object is a component of.
-            **kwargs: Keyword arguments for inheritance.
+            table_name: The name of the table.
+            **kwargs: Additional keyword arguments.
         """
         if table_name is not None:
             self.table_name = table_name
@@ -107,7 +112,7 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
             as_entries: If True, returns a list of dictionaries representing the entries; otherwise, returns a Result.
 
         Returns:
-            The result of the query, either as a Result object or as a list of dictionaries.
+            Result | list[dict[str, Any]]: The result of the query, either as a Result object or as a list of dictionaries.
         """
         if session is not None:
             return self.table.get_all(session, as_entries=as_entries)
@@ -120,12 +125,21 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         session: AsyncSession | None = None,
         as_entries: bool = False,
     ) -> Result | list[dict[str, Any]]:
+        """Asynchronously fetches all entries from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            as_entries: If True, returns a list of dictionaries representing the entries; otherwise, returns a Result.
+
+        Returns:
+            Result | list[dict[str, Any]]: The result of the query, either as a Result object or as a list of dictionaries.
+        """
         if session is not None:
             return await self.table.get_all_async(session, as_entries=as_entries)
         else:
             async with self.create_async_session() as session:
                 return await self.table.get_all_async(session, as_entries=as_entries)
-    
+
     def insert(
         self,
         item: Any = None,
@@ -160,12 +174,22 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Asynchronously inserts an item into the table.
+
+        Args:
+            item: The item to insert. Defaults to None.
+            entry: A dictionary representing the entry to insert. Defaults to None.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            as_entry: If True, creates the item from the entry dictionary. Defaults to False.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         if session is not None:
             await self.table.insert_async(session, item, entry, as_entry, begin, **kwargs)
         else:
             async with self.create_async_session() as session:
                 await self.table.insert_async(session, item, entry, as_entry, begin, **kwargs)
-    
+
     def insert_all(
         self,
         items: Iterable[Any] = (),
@@ -173,12 +197,20 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         as_entries: bool = False,
         begin: bool = False,
     ) -> None:
+        """Inserts multiple items into the table.
+
+        Args:
+            items: The items to insert. Defaults to an empty iterable.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            as_entries: If True, creates the items from the entry dictionaries. Defaults to False.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if session is not None:
             self.table.insert_all(session, items, as_entries, begin)
         else:
             with self.create_session() as session:
                 self.table.insert_all(session, items, as_entries, begin)
-    
+
     async def insert_all_async(
         self,
         items: Iterable[Any] = (),
@@ -186,6 +218,14 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         as_entries: bool = False,
         begin: bool = False,
     ) -> None:
+        """Asynchronously inserts multiple items into the table.
+
+        Args:
+            items: The items to insert. Defaults to an empty iterable.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            as_entries: If True, creates the items from the entry dictionaries. Defaults to False.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if session is not None:
             await self.table.insert_all_async(session, items, as_entries, begin)
         else:
@@ -200,6 +240,15 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Updates an entry in the table.
+
+        Args:
+            entry: A dictionary representing the entry to update. Defaults to None.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            key: The key to identify the entry. Defaults to "id_".
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         if session is not None:
             self.table.update_entry(session, entry, key, begin, **kwargs)
         else:
@@ -214,6 +263,15 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Asynchronously updates an entry in the table.
+
+        Args:
+            entry: A dictionary representing the entry to update. Defaults to None.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            key: The key to identify the entry. Defaults to "id_".
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         if session is not None:
             await self.table.update_entry_async(session, entry, key, begin, **kwargs)
         else:
@@ -227,6 +285,14 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         key: str = "id_",
         begin: bool = False,
     ) -> None:
+        """Updates multiple entries in the table.
+
+        Args:
+            entries: An iterable of dictionaries representing the entries to update. Defaults to None.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            key: The key to identify the entries. Defaults to "id_".
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if session is not None:
             self.table.update_entries(session, entries, key, begin)
         else:
@@ -240,18 +306,33 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         key: str = "id_",
         begin: bool = False,
     ) -> None:
+        """Asynchronously updates multiple entries in the table.
+
+        Args:
+            entries: An iterable of dictionaries representing the entries to update. Defaults to None.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            key: The key to identify the entries. Defaults to "id_".
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if session is not None:
             await self.table.update_entries_async(session, entries, key, begin)
         else:
             async with self.create_async_session() as session:
                 await self.table.update_entries_async(session, entries, key, begin)
-    
+
     def delete_item(
         self,
         item: BaseTable,
         session: Session | None = None,
         begin: bool = False,
     ) -> None:
+        """Deletes an item from the table.
+
+        Args:
+            item: The item to delete.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if session is not None:
             self.table.delete_item(session, item, begin)
         else:
@@ -264,6 +345,13 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         session: AsyncSession | None = None,
         begin: bool = False,
     ) -> None:
+        """Asynchronously deletes an item from the table.
+
+        Args:
+            item: The item to delete.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if session is not None:
             await self.table.delete_item_async(session, item, begin)
         else:
@@ -271,6 +359,14 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
                 await self.table.delete_item_async(session, item, begin)
 
     def get_last_update_id(self, session: Session | None = None) -> int | None:
+        """Gets the last update ID from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            int | None: The last update ID.
+        """
         if session is not None:
             return self.table.get_last_update_id(session)
         else:
@@ -278,6 +374,14 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
                 return self.table.get_last_update_id(session)
 
     async def get_last_update_id_async(self, session: AsyncSession | None = None) -> int | None:
+        """Asynchronously gets the last update ID from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            int | None: The last update ID.
+        """
         if session is not None:
             return await self.table.get_last_update_id_async(session)
         else:
@@ -291,12 +395,23 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         inclusive: bool = True,
         as_entries: bool = False,
     ) -> Result | list[dict[str, Any]]:
+        """Gets entries from the table based on the update ID.
+
+        Args:
+            update_id: The update ID to filter entries.
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+            inclusive: If True, includes the entry with the given update ID. Defaults to True.
+            as_entries: If True, returns a list of dictionaries representing the entries; otherwise, returns a Result.
+
+        Returns:
+            Result | list[dict[str, Any]]: The result of the query, either as a Result object or as a list of dictionaries.
+        """
         if session is not None:
             return self.table.get_from_update(session, update_id, inclusive, as_entries)
         else:
             with self.create_session() as session:
                 return self.table.get_from_update(session, update_id, inclusive, as_entries)
-    
+
     async def get_from_update_async(
         self,
         update_id: int,
@@ -304,6 +419,17 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         inclusive: bool = True,
         as_entries: bool = False,
     ) -> Result | list[dict[str, Any]]:
+        """Asynchronously gets entries from the table based on the update ID.
+
+        Args:
+            update_id: The update ID to filter entries.
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+            inclusive: If True, includes the entry with the given update ID. Defaults to True.
+            as_entries: If True, returns a list of dictionaries representing the entries; otherwise, returns a Result.
+
+        Returns:
+            Result | list[dict[str, Any]]: The result of the query, either as a Result object or as a list of dictionaries.
+        """
         if session is not None:
             return await self.table.get_from_update_async(session, update_id, inclusive, as_entries)
         else:
@@ -317,7 +443,13 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         session: Session | None = None,
         begin: bool = False,
     ) -> None:
-        """Correct the contents of the file."""
+        """Corrects the contents of the file. (Abstract)
+
+        Args:
+            path: The path to the file.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
 
     async def correct_contents_async(
         self,
@@ -325,4 +457,10 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         session: AsyncSession | None = None,
         begin: bool = False,
     ) -> None:
-        """Asynchronously correct the contents of the file."""
+        """Asynchronously corrects the contents of the file. (Abstract)
+
+        Args:
+            path: The path to the file.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """

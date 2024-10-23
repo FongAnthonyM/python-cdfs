@@ -13,15 +13,12 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-import pathlib
-from typing import Any, Iterable
-from weakref import ref
+from typing import Any
 
 # Third-Party Packages #
 from baseobjects import BaseComponent
-from sqlalchemy import Result
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
 from ..contentsfile import ContentsFile
@@ -31,7 +28,7 @@ from ..tables import BaseTable
 # Definitions #
 # Classes #
 class BaseCDFSComponent(BaseComponent):
-    """A basic component object.
+    """A base class for CDFS components.
 
     Attributes:
         _composite: A weak reference to the object which this object is a component of.

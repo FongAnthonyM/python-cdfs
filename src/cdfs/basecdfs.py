@@ -1,5 +1,5 @@
 """basecdfs.py
-
+Base class for a Continuous Data File System (CDFS).
 """
 # Package Header #
 from .header import *
@@ -18,9 +18,8 @@ from typing import ClassVar, Any
 
 # Third-Party Packages #
 from baseobjects import BaseComposite
-from baseobjects.cachingtools import CachingObject, timed_keyless_cache
-from sqlalchemy.orm import DeclarativeBase, Session
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from baseobjects.cachingtools import CachingObject
+from sqlalchemy.orm import DeclarativeBase
 
 # Local Packages #
 from .contentsfile import ContentsFile
@@ -36,8 +35,6 @@ class BaseCDFS(CachingObject, BaseComposite):
 
     Attributes:
         default_component_types: Default types for components.
-
-    Attributes:
         _path: The file path to the CDFS.
         _is_open: Indicates if the CDFS is currently open.
         _mode: The mode in which the CDFS is opened (e.g., 'r' for read, 'w' for write).
@@ -48,11 +45,16 @@ class BaseCDFS(CachingObject, BaseComposite):
         contents_file: The contents file object.
         tables: A dictionary of table names to table classes.
 
-    Properties:
-        path: Gets or sets the file path to the CDFS.
-        is_open: Checks if the CDFS is open.
-        mode: Gets the mode in which the CDFS is opened.
-        contents_path: Gets the path to the contents file.
+    Args:
+        path: The path to the CDFS.
+        mode: The mode in which the CDFS is opened.
+        open_: Whether to open the CDFS.
+        create: Whether to create the CDFS.
+        build: Whether to build the CDFS.
+        load: Whether to load the CDFS.
+        contents_name: The name of the contents file.
+        init: Whether to initialize the object.
+        **kwargs: Additional keyword arguments.
     """
 
     # Class Attributes #
@@ -75,11 +77,20 @@ class BaseCDFS(CachingObject, BaseComposite):
     # Properties #
     @property
     def path(self) -> pathlib.Path:
-        """The path to the BaseCDFS."""
+        """Gets the path to the BaseCDFS.
+
+        Returns:
+            pathlib.Path: The path to the BaseCDFS.
+        """
         return self._path
 
     @path.setter
     def path(self, value: str | pathlib.Path) -> None:
+        """Sets the path to the BaseCDFS.
+
+        Args:
+            value (str | pathlib.Path): The new path to the BaseCDFS.
+        """
         if isinstance(value, pathlib.Path) or value is None:
             self._path = value
         else:
@@ -87,14 +98,29 @@ class BaseCDFS(CachingObject, BaseComposite):
 
     @property
     def is_open(self) -> bool:
+        """Checks if the CDFS is open.
+
+        Returns:
+            bool: True if the CDFS is open, False otherwise.
+        """
         return self._is_open
 
     @property
     def mode(self) -> str:
+        """Gets the mode in which the CDFS is opened.
+
+        Returns:
+            str: The mode in which the CDFS is opened.
+        """
         return self._mode
 
     @property
     def contents_path(self) -> pathlib.Path:
+        """Gets the path to the contents file.
+
+        Returns:
+            pathlib.Path: The path to the contents file.
+        """
         return self.path / self.contents_file_name
 
     # Magic Methods #
@@ -132,6 +158,11 @@ class BaseCDFS(CachingObject, BaseComposite):
             )
 
     def __bool__(self) -> bool:
+        """Checks if the CDFS is open.
+
+        Returns:
+            bool: True if the CDFS is open, False otherwise.
+        """
         return self._is_open
 
     # Instance Methods #
@@ -147,25 +178,24 @@ class BaseCDFS(CachingObject, BaseComposite):
         contents_name: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Constructs this object.
+        """Constructs the BaseCDFS object.
 
         Args:
-            path: The path for this proxy to wrap.
-            s_id: The subject ID.
-            studies_path: The parent directory to this XLTEK study proxy.
-            proxies: An iterable holding arrays/objects to store in this proxy.
-            mode: Determines if the contents of this proxy are editable or not.
-            update: Determines if this proxy will start_timestamp updating or not.
-            open_: Determines if the arrays will remain open after construction.
-            load: Determines if the arrays will be constructed.
-            **kwargs: The keyword arguments to create contained arrays.
+            path: The path to the CDFS.
+            mode: The mode in which the CDFS is opened.
+            open_: Whether to open the CDFS.
+            create: Whether to create the CDFS.
+            build: Whether to build the CDFS.
+            load: Whether to load the CDFS.
+            contents_name: The name of the contents file.
+            **kwargs: Additional keyword arguments.
         """
         if path is not None:
             self.path = path
 
         if mode is not None:
             self._mode = mode
-            
+
         if contents_name is not None:
             self.contents_file_name = contents_name
 
@@ -183,6 +213,15 @@ class BaseCDFS(CachingObject, BaseComposite):
         load: bool = True,
         **kwargs: Any,
     ) -> None:
+        """Opens the CDFS.
+
+        Args:
+            mode: The mode in which the CDFS is opened.
+            create: Whether to create the CDFS.
+            build: Whether to build the CDFS.
+            load: Whether to load the CDFS.
+            **kwargs: Additional keyword arguments.
+        """
         if not self._is_open:
             if mode is not None:
                 self._mode = mode
@@ -203,13 +242,23 @@ class BaseCDFS(CachingObject, BaseComposite):
             if load:
                 self.load_components()
 
-    def close(self):
+    def close(self) -> bool:
+        """Closes the CDFS.
+
+        Returns:
+            bool: True if the CDFS is closed, False otherwise.
+        """
         if self.contents_file is not None:
             self.contents_file.close()
         self._is_open = False
         return True
 
     async def close_async(self) -> bool:
+        """Asynchronously closes the CDFS.
+
+        Returns:
+            bool: True if the CDFS is closed, False otherwise.
+        """
         if self.contents_file is not None:
             await self.contents_file.close_async()
         self._is_open = False
@@ -217,6 +266,13 @@ class BaseCDFS(CachingObject, BaseComposite):
 
     # Contents File
     def open_contents_file(self, create: bool = False, build: bool = True, **kwargs: Any) -> None:
+        """Opens the contents file.
+
+        Args:
+            create: Whether to create the contents file.
+            build: Whether to build the contents file.
+            **kwargs: Additional keyword arguments.
+        """
         if self.contents_file is not None:
             self.contents_file.open(**kwargs)
         elif self.contents_path.is_file():
@@ -242,9 +298,11 @@ class BaseCDFS(CachingObject, BaseComposite):
 
     # Components
     def build_tables(self) -> None:
+        """Builds the tables for the CDFS."""
         for component in self.components.values():
             component.build_tables()
 
     def load_components(self) -> None:
+        """Loads the components for the CDFS."""
         for component in self.components.values():
             component.load()

@@ -1,5 +1,5 @@
 """ metainformationcdfscomponent.py.py
-
+A component for managing meta-information in a CDFS.
 """
 # Package Header #
 from ..header import *
@@ -27,6 +27,21 @@ from .basetablecdfscomponent import BaseTableCDFSComponent
 # Definitions #
 # Classes #
 class MetaInformationCDFSComponent(BaseTableCDFSComponent):
+    """A component for managing meta-information in a CDFS.
+
+    Attributes:
+        table_name: The name of the table.
+        _table: The table class.
+        _meta_information: Cached meta-information.
+
+    Args:
+        composite: The object which this object is a component of.
+        table_name: The name of the table.
+        init_info: Initial meta-information.
+        init: Determines if this object will construct.
+        **kwargs: Additional keyword arguments.
+    """
+
     # Attributes #
     table_name: str = "meta_information"
     _table: type[BaseMetaInformationTable] | None = None
@@ -35,6 +50,11 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
     # Properties #
     @property
     def meta_information(self) -> dict[str, Any]:
+        """Gets the meta-information.
+
+        Returns:
+            dict[str, Any]: The meta-information.
+        """
         if not self._meta_information:
             self.get_meta_information()
         return self._meta_information
@@ -72,7 +92,9 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
 
         Args:
             composite: The object which this object is a component of.
-            **kwargs: Keyword arguments for inheritance.
+            table_name: The name of the table.
+            init_info: Initial meta-information.
+            **kwargs: Additional keyword arguments.
         """
         self._meta_information.update(init_info)
 
@@ -80,12 +102,12 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
 
     # File
     def load(self, *args: Any, **kwargs: Any) -> None:
-        """Load the component."""
+        """Loads the component."""
         self.get_meta_information()
 
     # Table
     def build_tables(self, *args: Any, **kwargs: Any) -> None:
-        """Build the table for the component."""
+        """Builds the table for the component."""
         self.create_meta_information(entry=self._meta_information, begin=True)
 
     # Meta Information
@@ -96,6 +118,14 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Creates meta-information in the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            entry: The meta-information entry to create.
+            begin: If True, begins a transaction for the operation.
+            **kwargs: Additional keyword arguments.
+        """
         if session is not None:
             self.table.create_information(session=session, entry=entry, begin=begin, **kwargs)
         else:
@@ -104,11 +134,19 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
 
     async def create_meta_information_async(
         self,
-        session: async_sessionmaker[AsyncSession] | AsyncSession | None = None,
+        session: AsyncSession | None = None,
         entry: dict[str, Any] | None = None,
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Asynchronously creates meta-information in the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            entry: The meta-information entry to create.
+            begin: If True, begins a transaction for the operation.
+            **kwargs: Additional keyword arguments.
+        """
         if session is not None:
             await self.table.create_information_async(
                 session=session,
@@ -130,6 +168,15 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
         session: Session | None = None,
         as_entry: bool = True,
     ) -> dict[str, Any] | BaseMetaInformationTable:
+        """Gets meta-information from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            as_entry: If True, returns the meta-information as a dictionary.
+
+        Returns:
+            dict[str, Any] | BaseMetaInformationTable: The meta-information.
+        """
         if session is not None:
             _meta_information = self.table.get_information(session, as_entry=False)
         else:
@@ -144,6 +191,15 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
         session: AsyncSession | None = None,
         as_entry: bool = True,
     ) -> dict[str, Any] | BaseMetaInformationTable:
+        """Asynchronously gets meta-information from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            as_entry: If True, returns the meta-information as a dictionary.
+
+        Returns:
+            dict[str, Any] | BaseMetaInformationTable: The meta-information.
+        """
         if session is not None:
             _meta_information = await self.table.get_information_async(session, as_entry=False)
         else:
@@ -160,6 +216,14 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Sets meta-information in the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            entry: The meta-information entry to set.
+            begin: If True, begins a transaction for the operation.
+            **kwargs: Additional keyword arguments.
+        """
         if session is not None:
             self.table.set_information(session=session, entry=entry, begin=begin, **kwargs)
         else:
@@ -174,6 +238,14 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Asynchronously sets meta-information in the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            entry: The meta-information entry to set.
+            begin: If True, begins a transaction for the operation.
+            **kwargs: Additional keyword arguments.
+        """
         if session is not None:
             await self.table.set_information_async(session=session, entry=entry, begin=begin, **kwargs)
         else:
@@ -192,6 +264,13 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Saves cached meta-information to the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            begin: If True, begins a transaction for the operation.
+            **kwargs: Additional keyword arguments.
+        """
         if session is not None:
             self.table.set_information(session=session, entry=self._meta_information, begin=begin, **kwargs)
         else:
@@ -204,6 +283,13 @@ class MetaInformationCDFSComponent(BaseTableCDFSComponent):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Asynchronously saves cached meta-information to the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            begin: If True, begins a transaction for the operation.
+            **kwargs: Additional keyword arguments.
+        """
         if session is not None:
             await self.table.set_information_async(session=session, entry=self._meta_information, begin=begin, **kwargs)
         else:

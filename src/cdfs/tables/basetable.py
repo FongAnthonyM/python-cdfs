@@ -60,11 +60,11 @@ class BaseTable:
         """Formats entry keyword arguments for creating or updating table entries.
 
         Args:
-            id_: The ID of the entry, if specified.
-            **kwargs: Additional keyword arguments for the entry.
+            id_ (str | uuid.UUID | None): The ID of the entry, if specified.
+            **kwargs (Any): Additional keyword arguments for the entry.
 
         Returns:
-            A dictionary of keyword arguments for the entry.
+            dict[str, Any]: A dictionary of keyword arguments for the entry.
         """
         if id_ is not None:
             kwargs["id_"] = uuid.UUID(hex=id_) if isinstance(id_, str) else id_
@@ -79,7 +79,7 @@ class BaseTable:
             **kwargs: Additional keyword arguments for the entry.
 
         Returns:
-            The new item from the table.
+            BaseTable: The new item from the table.
         """
         return cls(**cls.format_entry_kwargs(**(({} if dict_ is None else dict_) | kwargs)))
 
@@ -92,13 +92,22 @@ class BaseTable:
             as_entries: If True, returns a list of dictionaries representing the entries; otherwise, returns a Result.
 
         Returns:
-            The result of the query, either as a Result object or as a list of dictionaries.
+            Result | list[dict[str, Any]]: The result of the query, either as a Result object or as a list of dictionaries.
         """
         results = session.execute(lambda_stmt(lambda: select(cls)))
         return [r.as_entry() for r in results.scalars()] if as_entries else results
 
     @classmethod
     async def get_all_async(cls, session: AsyncSession, as_entries: bool = False) -> Result | list[dict[str, Any]]:
+        """Fetches all entries from the table asynchronously.
+
+        Args:
+            session: The SQLAlchemy async session to use for the query.
+            as_entries: If True, returns a list of dictionaries representing the entries; otherwise, returns a Result.
+
+        Returns:
+            Result | list[dict[str, Any]]: The result of the query, either as a Result object or as a list of dictionaries.
+        """
         results = await session.execute(lambda_stmt(lambda: select(cls)))
         return [r.as_entry() for r in results.scalars()] if as_entries else results
 
@@ -141,6 +150,16 @@ class BaseTable:
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Inserts an item into the table asynchronously.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            item: The item to insert. Defaults to None.
+            entry: A dictionary representing the entry to insert. Defaults to None.
+            as_entry: If True, creates the item from the entry dictionary. Defaults to False.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         if as_entry:
             item = cls.item_from_entry(**(({} if entry is None else entry) | kwargs))
 
@@ -158,6 +177,14 @@ class BaseTable:
         as_entries: bool = False,
         begin: bool = False,
     ) -> None:
+        """Inserts multiple items into the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            items: The items to insert.
+            as_entries: If True, creates the items from the entry dictionaries. Defaults to False.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if as_entries:
             items = [cls.item_from_entry(i) for i in items]
 
@@ -175,6 +202,14 @@ class BaseTable:
         as_entries: bool = False,
         begin: bool = False,
     ) -> None:
+        """Inserts multiple items into the table asynchronously.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            items: The items to insert.
+            as_entries: If True, creates the items from the entry dictionaries. Defaults to False.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if as_entries:
             items = [cls.item_from_entry(i) for i in items]
 
@@ -186,6 +221,15 @@ class BaseTable:
 
     @classmethod
     def _create_find_statement(cls, key: str, value: Any):
+        """Creates a SQLAlchemy statement to find an entry by a specific key and value.
+
+        Args:
+            key: The key (column name) to search by.
+            value: The value to search for.
+
+        Returns:
+            lambda_stmt: The SQLAlchemy statement to find the entry.
+        """
         column = getattr(cls, key)
         statement = lambda_stmt(lambda: select(cls))
         statement += lambda s: s.where(column == value)
@@ -200,6 +244,15 @@ class BaseTable:
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Updates an entry in the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            entry: A dictionary representing the entry to update. Defaults to None.
+            key: The key (column name) to search by. Defaults to "id_".
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         entry.update(kwargs)
         statement = cls._create_find_statement(key, entry[key])
         if begin:
@@ -225,6 +278,15 @@ class BaseTable:
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Updates an entry in the table asynchronously.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            entry: A dictionary representing the entry to update. Defaults to None.
+            key: The key (column name) to search by. Defaults to "id_".
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         entry.update(kwargs)
         statement = cls._create_find_statement(key, entry[key])
         if begin:
@@ -249,6 +311,14 @@ class BaseTable:
         key: str = "id_",
         begin: bool = False,
     ) -> None:
+        """Updates multiple entries in the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            entries: A list of dictionaries representing the entries to update. Defaults to None.
+            key: The key (column name) to search by. Defaults to "id_".
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         items = []
         if begin:
             with session.begin():
@@ -278,6 +348,14 @@ class BaseTable:
         key: str = "id_",
         begin: bool = False,
     ) -> None:
+        """Updates multiple entries in the table asynchronously.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            entries: A list of dictionaries representing the entries to update. Defaults to None.
+            key: The key (column name) to search by. Defaults to "id_".
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         items = []
         if begin:
             async with session.begin():
@@ -306,6 +384,13 @@ class BaseTable:
         item: "BaseTable",
         begin: bool = False,
     ) -> None:
+        """Deletes an item from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            item: The item to delete.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if begin:
             with session.begin():
                 session.delete(item)
@@ -319,6 +404,13 @@ class BaseTable:
         item: "BaseTable",
         begin: bool = False,
     ) -> None:
+        """Deletes an item from the table asynchronously.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            item: The item to delete.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if begin:
             async with session.begin():
                 await session.delete(item)
@@ -327,10 +419,26 @@ class BaseTable:
 
     @classmethod
     def get_last_update_id(cls, session: Session) -> int | None:
+        """Gets the last update ID from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+
+        Returns:
+            int | None: The last update ID, or None if no updates exist.
+        """
         return session.execute(lambda_stmt(lambda: select(func.max(cls.update_id)))).one_or_none()[0]
 
     @classmethod
     async def get_last_update_id_async(cls, session: AsyncSession) -> int | None:
+        """Gets the last update ID from the table asynchronously.
+
+        Args:
+            session: The SQLAlchemy async session to use for the query.
+
+        Returns:
+            int | None: The last update ID, or None if no updates exist.
+        """
         return (await session.execute(lambda_stmt(lambda: select(func.max(cls.update_id))))).one_or_none()[0]
 
     @classmethod
@@ -341,6 +449,17 @@ class BaseTable:
         inclusive: bool = True,
         as_entries: bool = False,
     ) -> Result | list[dict[str, Any]]:
+        """Gets entries from the table based on the update ID.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            update_id: The update ID to filter by.
+            inclusive: If True, includes entries with the specified update ID. Defaults to True.
+            as_entries: If True, returns a list of dictionaries representing the entries; otherwise, returns a Result.
+
+        Returns:
+            Result | list[dict[str, Any]]: The result of the query, either as a Result object or as a list of dictionaries.
+        """
         update_statement = lambda_stmt(lambda: select(cls))
         if inclusive:
             update_statement += lambda s: s.where(cls.update_id >= update_id)
@@ -358,6 +477,17 @@ class BaseTable:
         inclusive: bool = True,
         as_entries: bool = False,
     ) -> Result | list[dict[str, Any]]:
+        """Gets entries from the table based on the update ID asynchronously.
+
+        Args:
+            session: The SQLAlchemy async session to use for the query.
+            update_id: The update ID to filter by.
+            inclusive: If True, includes entries with the specified update ID. Defaults to True.
+            as_entries: If True, returns a list of dictionaries representing the entries; otherwise, returns a Result.
+
+        Returns:
+            Result | list[dict[str, Any]]: The result of the query, either as a Result object or as a list of dictionaries.
+        """
         update_statement = lambda_stmt(lambda: select(cls))
         if inclusive:
             update_statement += lambda s: s.where(cls.update_id >= update_id)
@@ -380,12 +510,17 @@ class BaseTable:
             self.update_id = update_id
 
     def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with all the contents of the row
+        """Creates a dictionary with all the contents of the row.
 
         Returns:
-            A dictionary representation of the row.
+            dict[str, Any]: A dictionary representation of the row.
         """
         return {"id": self.id, "update_id": self.update_id}
 
     def as_entry(self) -> dict[str, Any]:
+        """Creates a dictionary with the entry contents of the row.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the entry.
+        """
         return {"id": self.id, "update_id": self.update_id}

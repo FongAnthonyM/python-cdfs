@@ -1,5 +1,5 @@
 """basecontentstable.py
-
+A table which tracks the contents of multiple files.
 """
 # Package Header #
 from ..header import *
@@ -19,8 +19,7 @@ import uuid
 
 # Third-Party Packages #
 from sqlalchemy.orm import Mapped, Session
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
 from .basetable import BaseTable
@@ -29,7 +28,7 @@ from .basetable import BaseTable
 # Definitions #
 # Classes #
 class BaseContentsTable(BaseTable):
-    """The specification for a table which tracks the contents of multiple files.
+    """A table which tracks the contents of multiple files.
 
     This class defines a table which tracks the contents of multiple files and methods for formatting entry keyword
     arguments, correcting contents, and converting entries to dictionaries.
@@ -65,6 +64,18 @@ class BaseContentsTable(BaseTable):
         shape: tuple[int] = (0,),
         **kwargs: Any,
     ) -> dict[str, Any]:
+        """Formats entry keyword arguments for creating or updating table entries.
+
+        Args:
+            id_: The ID of the entry, if specified.
+            path: The path of the content. Defaults to an empty string.
+            axis: The axis of the content. Defaults to 0.
+            shape: The shape of the content. Defaults to (0,).
+            **kwargs: Additional keyword arguments for the entry.
+
+        Returns:
+            dict[str, Any]: A dictionary of keyword arguments for the entry.
+        """
         kwargs = super().format_entry_kwargs(id_=id_, **kwargs)
         kwargs.update(
             path=path.as_posix() if isinstance(path, pathlib.Path) else path,
@@ -75,19 +86,45 @@ class BaseContentsTable(BaseTable):
 
     @classmethod
     def correct_contents(cls, session: Session, path: pathlib.Path, begin: bool = False) -> None:
+        """Corrects the contents of the table based on the provided path.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            path: The path of the content to correct.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+
+        Raises:
+            NotImplementedError: This method is not implemented.
+        """
         raise NotImplementedError
 
     @classmethod
     async def correct_contents_async(
         cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
+        session: AsyncSession,
         path: pathlib.Path,
         begin: bool = False,
     ) -> None:
+        """Asynchronously corrects the contents of the table based on the provided path.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            path: The path of the content to correct.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+
+        Raises:
+            NotImplementedError: This method is not implemented.
+        """
         raise NotImplementedError
 
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
+        """Updates the row of the table with the provided dictionary or keyword arguments.
+
+        Args:
+            dict_: A dictionary of attributes/columns to update. Defaults to None.
+            **kwargs: Additional keyword arguments for the attributes to update.
+        """
         dict_ = ({} if dict_ is None else dict_) | kwargs
         if (path := dict_.get("path", None)) is not None:
             self.path = path.as_posix() if isinstance(path, pathlib.Path) else path
@@ -96,8 +133,13 @@ class BaseContentsTable(BaseTable):
         if (shape := dict_.get("shape", None)) is not None:
             self.shape = str(shape).strip("()")
         super().update(dict_)
-    
+
     def as_dict(self) -> dict[str, Any]:
+        """Creates a dictionary with all the contents of the row.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the row.
+        """
         entry = super().as_dict()
         entry.update(
             path=self.path,
@@ -107,6 +149,11 @@ class BaseContentsTable(BaseTable):
         return entry
 
     def as_entry(self) -> dict[str, Any]:
+        """Creates a dictionary with the entry contents of the row.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the entry.
+        """
         entry = super().as_dict()
         entry.update(
             path=self.path,
