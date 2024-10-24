@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ....header import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -16,10 +16,9 @@ __email__ = __email__
 from typing import Any, Union
 
 # Third-Party Packages #
-from baseobjects import singlekwargdispatch
 from sqlalchemy import select, lambda_stmt
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
 from .basetable import BaseTable
@@ -28,6 +27,17 @@ from .basetable import BaseTable
 # Definitions #
 # Classes #
 class BaseMetaInformationTable(BaseTable):
+    """A table for storing meta-information in a SQLAlchemy ORM model.
+
+    This class extends the BaseTable class and provides additional methods for creating, retrieving, and updating
+    meta-information entries in the table.
+
+    Class Attributes:
+        __tablename__: The name of the table.
+        __mapper_args__: Mapper arguments for SQLAlchemy ORM configurations.
+    """
+
+    # Class Attributes #
     __tablename__ = "metainformation"
     __mapper_args__ = {"polymorphic_identity": "metainformation"}
 
@@ -40,6 +50,16 @@ class BaseMetaInformationTable(BaseTable):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Creates or updates meta-information in the table.
+
+        If an entry already exists, it updates the entry; otherwise, it inserts a new entry.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            entry: A dictionary representing the entry to create or update. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         if begin:
             with session.begin():
                 result = session.execute(lambda_stmt(lambda: select(cls))).scalar()
@@ -54,44 +74,24 @@ class BaseMetaInformationTable(BaseTable):
             else:
                 result.update(entry, **kwargs)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
     async def create_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-        entry: dict[str, Any] | None = None,
-        begin: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @create_information_async.register(async_sessionmaker)
-    @classmethod
-    async def _create_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession],
-        entry: dict[str, Any] | None = None,
-        begin: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        statement = lambda_stmt(lambda: select(cls))
-        async with session() as async_session:
-            async with async_session.begin():
-                result = (await async_session.execute(statement)).scalar()
-                if result is None:
-                    await cls.insert_async(session=async_session, entry=entry, as_entry=True, begin=False, **kwargs)
-                else:
-                    result.update(entry, **kwargs)
-
-    @create_information_async.register(AsyncSession)
-    @classmethod
-    async def _create_information_async(
         cls,
         session: AsyncSession,
         entry: dict[str, Any] | None = None,
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Asynchronously creates or updates meta-information in the table.
+
+        If an entry already exists, it updates the entry; otherwise, it inserts a new entry.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            entry: A dictionary representing the entry to create or update. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         statement = lambda_stmt(lambda: select(cls))
         if begin:
             async with session.begin():
@@ -113,38 +113,33 @@ class BaseMetaInformationTable(BaseTable):
         session: Session,
         as_entry: bool = True,
     ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
+        """Retrieves meta-information from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query.
+            as_entry: If True, returns the entry as a dictionary; otherwise, returns the table object. Defaults to True.
+
+        Returns:
+            Union[dict[str, Any], BaseMetaInformationTable]: The meta-information entry, either as a dictionary or as a table object.
+        """
         result = session.execute(lambda_stmt(lambda: select(cls))).scalar()
         return (result.as_entry() if as_entry else result) if result is not None else {}
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
     async def get_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-        as_entry: bool = True,
-    ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @get_information_async.register(async_sessionmaker)
-    @classmethod
-    async def _get_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession],
-        as_entry: bool = True,
-    ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
-        statement = lambda_stmt(lambda: select(cls))
-        async with session() as async_session:
-            result = (await async_session.execute(statement)).scalar()
-
-        return (result.as_entry() if as_entry else result) if result is not None else {}
-
-    @get_information_async.register(AsyncSession)
-    @classmethod
-    async def _get_information_async(
         cls,
         session: AsyncSession,
         as_entry: bool = True,
     ) -> Union[dict[str, Any], "BaseMetaInformationTable"]:
+        """Asynchronously retrieves meta-information from the table.
+
+        Args:
+            session: The SQLAlchemy async session to use for the query.
+            as_entry: If True, returns the entry as a dictionary; otherwise, returns the table object. Defaults to True.
+
+        Returns:
+            Union[dict[str, Any], BaseMetaInformationTable]: The meta-information entry, either as a dictionary or as a table object.
+        """
         result = (await session.execute(lambda_stmt(lambda: select(cls)))).scalar()
         return (result.as_entry() if as_entry else result) if result is not None else {}
 
@@ -156,50 +151,43 @@ class BaseMetaInformationTable(BaseTable):
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Sets meta-information in the table.
+
+        Updates the existing entry with the provided information.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            entry: A dictionary representing the entry to update. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         if begin:
             with session.begin():
                 session.execute(lambda_stmt(lambda: select(cls))).scalar().update(entry, **kwargs)
         else:
             session.execute(lambda_stmt(lambda: select(cls))).scalar().update(entry, **kwargs)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
     async def set_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-        entry: dict[str, Any] | None = None,
-        begin: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @set_information_async.register(async_sessionmaker)
-    @classmethod
-    async def _set_information_async(
-        cls,
-        session: async_sessionmaker[AsyncSession],
-        entry: dict[str, Any] | None = None,
-        begin: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        statement = lambda_stmt(lambda: select(cls))
-        async with session() as async_session:
-            async with async_session.begin():
-                (await async_session.execute(statement)).scalar().update(entry, **kwargs)
-
-    @set_information_async.register(AsyncSession)
-    @classmethod
-    async def _set_information_async(
         cls,
         session: AsyncSession,
         entry: dict[str, Any] | None = None,
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Asynchronously sets meta-information in the table.
+
+        Updates the existing entry with the provided information.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            entry: A dictionary representing the entry to update. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
         statement = lambda_stmt(lambda: select(cls))
         if begin:
             async with session.begin():
                 (await session.execute(statement)).scalar().update(entry, **kwargs)
         else:
             (await session.execute(statement)).scalar().update(entry, **kwargs)
-            

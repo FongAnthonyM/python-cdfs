@@ -18,8 +18,7 @@ from collections.abc import Iterable
 import datetime
 from decimal import Decimal
 import pathlib
-from typing import Any
-from warnings import warn
+from typing import Any, Optional
 
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
@@ -28,13 +27,103 @@ from proxyarrays import BaseContainerFileTimeSeries, BaseDirectoryTimeSeries, Di
 import numpy as np
 
 # Local Packages #
-from ..contentsfile.sqlite import TimeContentsFile
 
 
 # Definitions #
 # Classes #
 class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
+    """A base class for time contents leaf containers in a file time series.
+
+    This class provides properties and methods to handle time-related attributes such as sample rate, start and end
+    timestamps, and time zone information.
+
+    Attributes:
+        file_type: The type of the file.
+        _shape: The shape of the data.
+        _sample_rate: The sample rate of the data.
+        _tzinfo: The time zone information.
+        _start: The start timestamp in nanoseconds.
+        _end: The end timestamp in nanoseconds.
+    """
+
+    # Attributes #
     file_type: type | None = None
+
+    _shape: tuple[int] | None = None
+    _sample_rate: Decimal | None = None
+    _tzinfo: datetime.tzinfo | None = None
+    _start: int | None = None
+    _end: int | None = None
+
+    # Properties #
+    @property
+    def is_open(self) -> bool:
+        """bool: Indicates if the file is open."""
+        return self._is_open()
+
+    @property
+    def tzinfo(self) -> datetime.tzinfo | None:
+        """datetime.tzinfo | None: Gets or sets the time zone information."""
+        return self.get_tzinfo()
+
+    @tzinfo.setter
+    def tzinfo(self, value: datetime.tzinfo | None) -> None:
+        self._tzinfo = value
+
+    @property
+    def start_datetime(self) -> Timestamp | None:
+        """Timestamp | None: The start datetime of this proxy."""
+        start = self.get_start_nanostamp()
+        return Timestamp.fromnanostamp(start, tz=self.tzinfo) if start is not None else None
+
+    @property
+    def start_nanostamp(self) -> int | None:
+        """int | None: The start timestamp in nanoseconds."""
+        return self.get_start_nanostamp()
+
+    @property
+    def start_timestamp(self) -> float | None:
+        """float | None: The start timestamp in seconds."""
+        start = self.get_start_nanostamp()
+        return float(start) / 10 ** 9 if start is not None else None
+
+    @property
+    def end_datetime(self) -> Timestamp | None:
+        """Timestamp | None: The end datetime of this proxy."""
+        end = self.get_end_nanostamp()
+        return Timestamp.fromnanostamp(end, tz=self.tzinfo) if end is not None else None
+
+    @property
+    def end_nanostamp(self) -> float | None:
+        """float | None: The end timestamp in nanoseconds."""
+        return self.get_end_nanostamp()
+
+    @property
+    def end_timestamp(self) -> float | None:
+        """float | None: The end timestamp in seconds."""
+        end = self.get_end_nanostamp()
+        return float(end) / 10 ** 9 if end is not None else None
+
+    @property
+    def sample_rate(self) -> float:
+        """float: The sample rate of this proxy."""
+        return self.get_sample_rate()
+
+    @property
+    def sample_rate_decimal(self) -> Decimal:
+        """Decimal: The sample rate as a Decimal object."""
+        return self.get_sample_rate_decimal()
+
+    @property
+    def sample_period(self) -> float:
+        """float: The sample period of this proxy."""
+        return self.get_sample_period()
+
+    @sample_period.setter
+    def sample_period(self, value: float | str | Decimal) -> None:
+        if not isinstance(value, Decimal):
+            value = Decimal(value)
+        self._sample_rate = 1 / value
 
     # Magic Methods #
     # Construction/Destruction
@@ -54,13 +143,22 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         init: bool = True,
         **kwargs: Any,
     ) -> None:
-        # New Attributes #
-        self._shape: tuple[int] | None = None
-        self._sample_rate: Decimal | None = None
-        self._tzinfo: datetime.tzinfo | None = None
-        self._start: int | None = None
-        self._end: int | None = None
+        """Initializes a BaseTimeContentsLeafContainer instance.
 
+        Args:
+            file (Any): The file object to wrap or a path to the file.
+            mode (str | None): The mode this proxy and file will be in.
+            shape (tuple[int] | None): The shape of this proxy.
+            axis (int | None): The axis of the data which this proxy extends for the contained data arrays.
+            sample_rate (float | str | Decimal | None): The sample rate of the data.
+            sample_period (float | str | Decimal | None): The sample period of this proxy.
+            start (datetime.datetime | float | int | np.dtype | np.ndarray): The start of this proxy.
+            end (datetime.datetime | float | int | np.dtype | np.ndarray): The end of this proxy.
+            tzinfo (datetime.tzinfo | None): The time zone of the timestamps.
+            path (str | pathlib.Path | None): The path of the file to wrap.
+            init (bool): Determines if this object will construct.
+            **kwargs (Any): Additional keyword arguments.
+        """
         # Parent Attributes #
         super().__init__(init=False)
 
@@ -79,73 +177,6 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
                 mode=mode,
                 **kwargs,
             )
-
-    @property
-    def is_open(self) -> bool:
-        return self._is_open()
-
-    @property
-    def tzinfo(self) -> datetime.tzinfo | None:
-        return self.get_tzinfo()
-
-    @tzinfo.setter
-    def tzinfo(self, value: datetime.tzinfo | None) -> None:
-        self._tzinfo = value
-
-    @property
-    def start_datetime(self) -> Timestamp | None:
-        """The start datetime of this proxy."""
-        start = self.get_start_nanostamp()
-        return Timestamp.fromnanostamp(start, tz=self.tzinfo) if start is not None else None
-
-    @property
-    def start_nanostamp(self) -> int | None:
-        """The start timestamp of this proxy."""
-        return self.get_start_nanostamp()
-
-    @property
-    def start_timestamp(self) -> float | None:
-        """The start timestamp of this proxy."""
-        start = self.get_start_nanostamp()
-        return float(start) / 10**9 if start is not None else None
-
-    @property
-    def end_datetime(self) -> Timestamp | None:
-        """The end datetime of this proxy."""
-        end = self.get_end_nanostamp()
-        return Timestamp.fromnanostamp(end, tz=self.tzinfo) if end is not None else None
-
-    @property
-    def end_nanostamp(self) -> float | None:
-        """The end timestamp of this proxy."""
-        return self.get_end_nanostamp()
-
-    @property
-    def end_timestamp(self) -> float | None:
-        """The end timestamp of this proxy."""
-        end = self.get_end_nanostamp()
-        return float(end) / 10 ** 9 if end is not None else None
-
-    @property
-    def sample_rate(self) -> float:
-        """The sample rate of this proxy."""
-        return self.get_sample_rate()
-
-    @property
-    def sample_rate_decimal(self) -> Decimal:
-        """The sample rate as Decimal object"""
-        return self.get_sample_rate_decimal()
-
-    @property
-    def sample_period(self) -> float:
-        """The sample period of this proxy."""
-        return self.get_sample_period()
-
-    @sample_period.setter
-    def sample_period(self, value: float | str | Decimal) -> None:
-        if not isinstance(value, Decimal):
-            value = Decimal(value)
-        self._sample_rate = 1 / value
 
     # Instance Methods
     # Constructors/Destructors
@@ -167,36 +198,36 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         """Constructs this object.
 
         Args:
-            file: The file object to wrap or a path to the file.
-            mode: The mode this proxy and file will be in.
-            shape: The shape of this proxy.
-            axis: The axis of the data which this proxy extends for the contained data arrays.
-            sample_rate: The sample rate of the data.
-            sample_period: The sample period of this proxy.
-            start: The start of this proxy.
-            end: The end of this proxy.
-            tzinfo: The time zone of the timestamps.
-            path: The path of the file to wrap.
-            **kwargs: The keyword arguments for constructing the file object.
+            file (Any): The file object to wrap or a path to the file.
+            mode (str | None): The mode this proxy and file will be in.
+            shape (tuple[int] | None): The shape of this proxy.
+            axis (int | None): The axis of the data which this proxy extends for the contained data arrays.
+            sample_rate (float | str | Decimal | None): The sample rate of the data.
+            sample_period (float | str | Decimal | None): The sample period of this proxy.
+            start (datetime.datetime | float | int | np.dtype | np.ndarray): The start of this proxy.
+            end (datetime.datetime | float | int | np.dtype | np.ndarray): The end of this proxy.
+            tzinfo (datetime.tzinfo | None): The time zone of the timestamps.
+            path (str | pathlib.Path | None): The path of the file to wrap.
+            **kwargs (Any): Additional keyword arguments.
         """
         if shape is not None:
             self._shape = shape
 
         if axis is not None:
             self.axis = axis
-        
+
         if sample_period is not None:
             self._sample_rate = 1 / Decimal(sample_period)
 
         if sample_rate is not None:
             self._sample_rate = Decimal(sample_rate)
-        
+
         if tzinfo is not None:
             self._tzinfo = tzinfo
-            
+
         if start is not None:
             self._start = int(nanostamp(start))
-            
+
         if end is not None:
             self._end = int(nanostamp(end))
 
@@ -205,6 +236,11 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
 
     @abstractmethod
     def _is_open(self) -> bool:
+        """Abstract method to check if the file is open.
+
+        Returns:
+            bool: True if the file is open, False otherwise.
+        """
         pass
 
     def update_defaults(
@@ -221,13 +257,12 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         """Updates the default values for this proxy.
 
         Args:
-            shape: The shape of this proxy.
-            axis: The axis of the data which this proxy extends for the contained data arrays.
-            sample_rate: The sample rate of the data.
-            sample_period: The sample period of this proxy.
-            start: The start of this proxy.
-            end: The end of this proxy.
-            tzinfo: The time zone of the timestamps.
+            shape (tuple[int] | None): The shape of this proxy.
+            axis (int | None): The axis of the data which this proxy extends for the contained data arrays.
+            sample_rate (float | str | Decimal | None): The sample rate of the data.
+            sample_period (float | str | Decimal | None): The sample period of this proxy.
+            start (datetime.datetime | float | int | np.dtype | np.ndarray): The start of this proxy.
+            end (datetime.datetime | float | int | np.dtype | np.ndarray): The end of this proxy.
         """
         if shape is not None:
             self._shape = shape
@@ -382,47 +417,18 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
 
 
 class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
-    default_node_type: type = None
-    default_leaf_type: type[BaseTimeContentsLeafContainer] | None = None
+    """A proxy node in a time content tree where the children can be either nodes or leafs.
 
-    # Magic Methods #
-    # Construction/Destruction
-    def __init__(
-        self,
-        path: pathlib.Path | str | None = None,
-        proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
-        axis: int | None = None,
-        precise: bool | None = None,
-        tzinfo: datetime.tzinfo | None = None,
-        mode: str = "r",
-        update: bool = True,
-        open_: bool = False,
-        build: bool = True,
-        init: bool = True,
-        **kwargs: Any,
-    ) -> None:
-        # New Attributes #
-        self.node_type: type | None = self.default_node_type
-        self.leaf_type: type | None = self.default_leaf_type
+    Attributes:
+        node_type: The type of the node proxy.
+        leaf_type: The type of the leaf container proxy.
+    """
 
-        # Parent Attributes #
-        super().__init__(init=False)
+    # Attributes #
+    node_type: type | None = None
+    leaf_type: type[BaseTimeContentsLeafContainer] | None = None
 
-        # Object Construction #
-        if init:
-            self.construct(
-                path=path,
-                proxies=proxies,
-                axis=axis,
-                precise=precise,
-                tzinfo=tzinfo,
-                mode=mode,
-                update=update,
-                open_=open_,
-                build=build,
-                **kwargs,
-            )
-
+    # Instance Methods #
     def update_child(
         self,
         path: str | list[str],
@@ -458,13 +464,13 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
             self.clear_caches()
 
     def update_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs: Any) -> None:
-        """Creates child arrays the given child paths.
+        """Creates child proxies from the given child paths.
 
         Args:
             paths: The child paths and keyword arguments to create arrays from.
-            open_: Determines if the arrays will remain open after construction.
-            sort: Determines if the arrays will be sorted after update.
-            **kwargs: The keyword arguments to create contained arrays.
+            open_: Determines if the proxies will remain open after construction.
+            sort: Determines if the proxies will be sorted after update.
+            **kwargs: The keyword arguments to create contained proxies.
         """
         children_info = {}
         for path_kwargs in paths:
@@ -503,35 +509,40 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
 
 
 class TimeContentsProxy(TimeContentsNodeProxy):
-    """A DirectoryTimeproxy object built with information from a dataset which maps out its contents.
-
-    Class Attributes:
-        default_node_proxy_type: The default proxy type to create when making a node.
+    """The root node proxy class for managing time contents in a directory time series.
 
     Attributes:
-        content_map: A HDF5Group with the mapping information for creating the proxy structure.
-        node_proxy_type: The proxy type to create when making a node.
+        default_proxy_type: The default type of the proxy.
+        node_type: The type of the node proxy.
+        cdfs_component: The CDFS component associated with this proxy.
+        latest_update: The latest update timestamp.
 
     Args:
-        path: The path for this proxy to wrap.
-        content_map: A HDF5Dataset with the mapping information for creating the proxy structure.
-        proxies: An iterable holding arrays/objects to store in this proxy.
+        path: The path for this proxy to manage.
+        cdfs_component: The CDFS component to create the tree from.
+        proxies: An iterable with tree objects to store in this proxy.
         mode: Determines if the contents of this proxy are editable or not.
-        update: Determines if this proxy will start_timestamp updating or not.
-        open_: Determines if the arrays will remain open after construction.
-        build: Determines if the arrays will be constructed.
-        **kwargs: The keyword arguments to create contained arrays.
+        update: Determines if this proxy will start updating or not.
+        open_: Determines if the proxies will remain open after construction.
+        build: Determines if the proxies will be constructed.
         init: Determines if this object will construct.
+        **kwargs: Additional keyword arguments.
     """
+
+    # Class Attributes #
     default_proxy_type: type = TimeContentsNodeProxy
-    default_node_type: type[TimeContentsNodeProxy] = TimeContentsNodeProxy
+    node_type: type[TimeContentsNodeProxy] = TimeContentsNodeProxy
+
+    # Attributes #
+    cdfs_component: Optional["TimeContentsCDFSComponent"] = None
+    latest_update: int = 0
 
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        contents_file: TimeContentsFile | None = None,
+        cdfs_component: Optional["TimeContentsCDFSComponent"] = None,
         proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "r",
         update: bool = False,
@@ -540,10 +551,6 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         init: bool = True,
         **kwargs: Any,
     ) -> None:
-        # New Attributes #
-        self.contents_file: TimeContentsFile | None = None
-        self.latest_update: int = 0
-
         # Parent Attributes #
         super().__init__(init=False)
 
@@ -551,7 +558,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         if init:
             self.construct(
                 path=path,
-                contents_file=contents_file,
+                cdfs_component=cdfs_component,
                 proxies=proxies,
                 mode=mode,
                 update=update,
@@ -565,7 +572,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        contents_file: TimeContentsFile | None = None,
+        cdfs_component: Optional["TimeContentsCDFSComponent"] = None,
         proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "r",
         update: bool = False,
@@ -576,19 +583,19 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         """Constructs this object.
 
         Args:
-            path: The path for this proxy to wrap.
-            contents_file: A HDF5Dataset with the mapping information for creating the proxy structure.
-            proxies: An iterable holding arrays/objects to store in this proxy.
-            mode: Determines if the contents of this proxy are editable or not.
-            update: Determines if this proxy will start_timestamp updating or not.
-            open_: Determines if the arrays will remain open after construction.
-            build: Determines if the arrays will be constructed.
-            **kwargs: The keyword arguments to create contained arrays.
+            path (pathlib.Path | str | None): The path for this proxy to wrap.
+            cdfs_component (Optional[TimeContentsCDFSComponent]): The CDFS component associated with this proxy.
+            proxies (Iterable[BaseDirectoryTimeSeries] | None): An iterable holding arrays/objects to store in this proxy.
+            mode (str): Determines if the contents of this proxy are editable or not.
+            update (bool): Determines if this proxy will start updating or not.
+            open_ (bool): Determines if the arrays will remain open after construction.
+            build (bool): Determines if the arrays will be constructed.
+            **kwargs (Any): Additional keyword arguments.
         """
-        if contents_file is not None:
-            self.contents_file = contents_file
+        if cdfs_component is not None:
+            self.cdfs_component = cdfs_component
 
-        if self.contents_file is not None:
+        if self.cdfs_component is not None:
             try:
                 self.get_tzinfo()
             except:
@@ -596,8 +603,9 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
         super().construct(path=path, proxies=proxies, mode=mode, update=update, open_=open_, build=build, **kwargs)
 
+    # Proxy
     def construct_proxies(self, open_=False, **kwargs: Any) -> None:
-        """Constructs the arrays for this object.
+        """Constructs the proxies using the entry structure from the CDFS component.
 
         Args:
             open_: Determines if the arrays will remain open after construction.
@@ -607,8 +615,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             self.get_tzinfo()
 
         self.proxy_paths.clear()
-        with self.contents_file.create_session() as session:
-            entries = self.contents_file.contents.get_all(session=session, as_entries=True)
+        entries = self.cdfs_component.get_all(as_entries=True)
 
         for entry in entries:
             del entry["id"]
@@ -620,17 +627,14 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
     async def construct_proxies_async(self, open_=False, **kwargs: Any) -> None:
-        """Constructs the arrays for this object.
+        """Constructs the arrays for this object asynchronously.
 
         Args:
-            open_: Determines if the arrays will remain open after construction.
-            **kwargs: The keyword arguments to create contained arrays.
+            open_ (bool): Determines if the arrays will remain open after construction.
+            **kwargs (Any): The keyword arguments to create contained arrays.
         """
         self.proxy_paths.clear()
-        entries = await self.contents_file.contents.get_all_async(
-            session=self.contents_file.async_session_maker,
-            as_entries=True,
-        )
+        entries = await self.cdfs_component.get_all_async(as_entries=True)
 
         for entry in entries:
             del entry["id"]
@@ -645,36 +649,10 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         """Updates the arrays for this object.
 
         Args:
-            open_: Determines if the arrays will remain open after the update.
-            **kwargs: The keyword arguments to create contained arrays.
+            open_ (bool): Determines if the arrays will remain open after the update.
+            **kwargs (Any): The keyword arguments to create contained arrays.
         """
-        with self.contents_file.create_session() as session:
-            entries = self.contents_file.contents.get_from_update(
-                session=session,
-                update_id=self.latest_update,
-                inclusive=False,
-                as_entries=True,
-            )
-
-        if entries:
-            for entry in entries:
-                del entry["id"]
-                entry["tzinfo"] = entry.pop("tz_offset")
-                update_id = entry.pop("update_id")
-                if update_id > self.latest_update:
-                    self.latest_update = update_id
-
-            self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
-
-    async def update_proxies_async(self, open_=False, **kwargs: Any) -> None:
-        """Updates the arrays for this object.
-
-        Args:
-            open_: Determines if the arrays will remain open after the update.
-            **kwargs: The keyword arguments to create contained arrays.
-        """
-        entries = await self.contents_file.contents.get_from_update_async(
-            session=self.contents_file.async_sessionmaker,
+        entries = self.cdfs_component.get_from_update(
             update_id=self.latest_update,
             inclusive=False,
             as_entries=True,
@@ -690,11 +668,40 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
             self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
+    async def update_proxies_async(self, open_=False, **kwargs: Any) -> None:
+        """Updates the arrays for this object asynchronously.
+
+        Args:
+            open_ (bool): Determines if the arrays will remain open after the update.
+            **kwargs (Any): The keyword arguments to create contained arrays.
+        """
+        entries = await self.cdfs_component.get_from_update_async(
+            update_id=self.latest_update,
+            inclusive=False,
+            as_entries=True,
+        )
+
+        if entries:
+            for entry in entries:
+                del entry["id"]
+                entry["tzinfo"] = entry.pop("tz_offset")
+                update_id = entry.pop("update_id")
+                if update_id > self.latest_update:
+                    self.latest_update = update_id
+
+            self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
+
+    # Time Information
     def get_tzinfo(self) -> datetime.tzinfo:
         """Gets the tzinfo from the contents file.
 
         Returns:
-            The tzinfo from the conetnes file.
+            datetime.tzinfo: The tzinfo from the contents file.
         """
-        self.tzinfo = self.contents_file.get_meta_information()["tz_offset"]
+        tz_offset = self.cdfs_component.get_tz_offsets_distinct()[0][0]
+        self.tzinfo = datetime.timezone(datetime.timedelta(seconds=tz_offset))  # Make this a property in a parent
         return self.tzinfo
+
+
+# Assign Cyclic Definition
+TimeContentsNodeProxy.node_type = TimeContentsNodeProxy
