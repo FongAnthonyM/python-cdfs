@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncAttrs
 
 # Local Packages #
 from src.cdfs import BaseCDFS
-from cdfs.contentsfile.tables import BaseMetaInformationTable, BaseTimeContentsTable
+from cdfs.contentsdatabase.tables import BaseMetaInformationTable, BaseTimeContentsTable
 from src.cdfs.components import MetaInformationCDFSComponent, TimeContentsCDFSComponent
 
 
@@ -53,7 +53,7 @@ class CDFSTest(BaseCDFS):
     schema = ContentsFileAsyncSchema
     default_component_types = {
         "meta_information": (MetaInformationCDFSComponent, {}),
-        "contentsfile": (TimeContentsCDFSComponent, {}),
+        "contentsdatabase": (TimeContentsCDFSComponent, {}),
     }
 
 

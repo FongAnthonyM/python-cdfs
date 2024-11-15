@@ -1,8 +1,8 @@
 """basetimecontentstable.py
-A table which tracks the contentsfile of multiple files with time-related metadata.
+A table which tracks the contents of multiple files with time-related metadata.
 """
 # Package Header #
-from cdfs.header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -30,13 +30,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import BigInteger
 
 # Local Packages #
-from .basecontentstable import BaseContentsTable
+from ...arrays import TimeContentsProxy
+from .basecontentstable import BaseContentsTable, ContentsTableManifestation
 
 
 # Definitions #
 # Classes #
 class BaseTimeContentsTable(BaseContentsTable):
-    """A table which tracks the contentsfile of multiple files with time-related metadata.
+    """A table which tracks the contents of multiple files with time-related metadata.
 
     This class extends BaseContentsTable to include time-related metadata such as timezone offset, start and end times,
     and sample rate.
@@ -265,7 +266,7 @@ class BaseTimeContentsTable(BaseContentsTable):
         super().update(dict_)
 
     def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with all the contentsfile of the row.
+        """Creates a dictionary with all the contents of the row.
 
         Returns:
             dict[str, Any]: A dictionary representation of the row.
@@ -280,7 +281,7 @@ class BaseTimeContentsTable(BaseContentsTable):
         return entry
 
     def as_entry(self) -> dict[str, Any]:
-        """Creates a dictionary with the entry contentsfile of the row.
+        """Creates a dictionary with the entry contents of the row.
 
         Returns:
             dict[str, Any]: A dictionary representation of the entry.
@@ -294,3 +295,165 @@ class BaseTimeContentsTable(BaseContentsTable):
             sample_rate=self.sample_rate,
         )
         return entry
+
+
+class TimeContentsTableManifestation(ContentsTableManifestation):
+    """The manifestation of a ContentsTable.
+
+    Attributes:
+        _database: A weak reference to the SQAlchemy database to interface with.
+        table: The SQLAlchemy declarative table which this object act as the interface for.
+
+    Args:
+        table: The SQLAlchemy declarative table which this object act as the interface for.
+        database: The SQAlchemy database to interface with.
+        init: Determines if this object will construct.
+        **kwargs: Additional keyword arguments.
+    """
+
+    # Attributes #
+    _table: type[BaseTimeContentsTable] | None = None
+
+    # Properties #
+    @property
+    def start_datetime(self):
+        """Gets the start datetime.
+
+        Returns:
+            Timestamp: The start datetime.
+        """
+        return self.get_start_datetime()
+
+    @property
+    def end_datetime(self):
+        """Gets the end datetime.
+
+        Returns:
+            Timestamp: The end datetime.
+        """
+        return self.get_end_datetime()
+
+    # Instance Methods #
+    # Meta Information
+    def get_tz_offsets_distinct(self, session: Session | None = None) -> Timestamp:
+        """Gets distinct timezone offsets from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            Timestamp: The distinct timezone offsets.
+        """
+        if session is not None:
+            return self.table.get_tz_offsets_distinct(session=session)
+        else:
+            with self.create_session() as session:
+                return self.table.get_tz_offsets_distinct(session=session)
+
+    async def get_tz_offsets_distinct_async(self, session: Session | None = None) -> Timestamp:
+        """Asynchronously gets distinct timezone offsets from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            Timestamp: The distinct timezone offsets.
+        """
+        if session is not None:
+            return await self.table.get_tz_offsets_distinct_async(session=session)
+        else:
+            async with self.create_async_session() as session:
+                return await self.table.get_tz_offsets_distinct_async(session=session)
+
+    def get_start_datetime(self, session: Session | None = None) -> Timestamp:
+        """Gets the start datetime from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            Timestamp: The start datetime.
+        """
+        if session is not None:
+            return self.table.get_start_datetime(session=session)
+        else:
+            with self.create_session() as session:
+                return self.table.get_start_datetime(session=session)
+
+    async def get_start_datetime_async(self, session: AsyncSession | None = None) -> Timestamp:
+        """Asynchronously gets the start datetime from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            Timestamp: The start datetime.
+        """
+        if session is not None:
+            return await self.table.get_start_datetime_async(session=session)
+        else:
+            async with self.create_async_session() as session:
+                return await self.table.get_start_datetime_async(session=session)
+
+    def get_end_datetime(self, session: Session | None = None) -> Timestamp:
+        """Gets the end datetime from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            Timestamp: The end datetime.
+        """
+        if session is not None:
+            return self.table.get_end_datetime(session=session)
+        else:
+            with self.create_session() as session:
+                return self.table.get_end_datetime(session=session)
+
+    async def get_end_datetime_async(self, session: AsyncSession | None = None) -> Timestamp:
+        """Asynchronously gets the end datetime from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            Timestamp: The end datetime.
+        """
+        if session is not None:
+            return await self.table.get_end_datetime_async(session=session)
+        else:
+            async with self.create_async_session() as session:
+                return await self.table.get_end_datetime_async(session=session)
+
+    def get_contents_nanostamps(self, session: Session | None = None) -> tuple[tuple[int, int, int], ...]:
+        """Gets all nanostamps from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            tuple[tuple[int, int, int], ...]: The nanostamps.
+        """
+        if session is not None:
+            return self.table.get_all_nanostamps(session=session)
+        else:
+            with self.create_session() as session:
+                return self.table.get_all_nanostamps(session=session)
+
+    async def get_contents_nanostamps_async(
+        self,
+        session: AsyncSession | None = None,
+    ) -> tuple[tuple[int, int, int], ...]:
+        """Asynchronously gets all nanostamps from the table.
+
+        Args:
+            session: The SQLAlchemy session to use for the query. Defaults to None.
+
+        Returns:
+            tuple[tuple[int, int, int], ...]: The nanostamps.
+        """
+        if session is not None:
+            return await self.table.get_all_nanostamps_async(session=session)
+        else:
+            async with self.create_async_session() as session:
+                return await self.table.get_all_nanostamps_async(session=session)

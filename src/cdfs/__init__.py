@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from cdfs.contentsfile.tables import *
+from cdfs.contentsdatabase.tables import *
 from .components import *
-from cdfs.contentsfile.contentsfile import ContentsFile
+from cdfs.contentsdatabase.contentsdatabase import ContentsDatabase
 from .basecdfs import BaseCDFS

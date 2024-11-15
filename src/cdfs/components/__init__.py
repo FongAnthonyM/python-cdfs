@@ -14,6 +14,5 @@ __email__ = __email__
 # Imports #
 # Local Packages #
 from .basecdfscomponent import BaseCDFSComponent
-from .basetablecdfscomponent import BaseTableCDFSComponent
-from .metainformationcdfscomponent import MetaInformationCDFSComponent
-from .timecontentscdfscomponent import TimeContentsCDFSComponent
+from .basecdfscontentscomponent import BaseCDFSContentsComponent
+from .cdfstimecontentscomponent import CDFSTimeContentsComponent

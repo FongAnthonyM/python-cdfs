@@ -13,16 +13,17 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-import pathlib
+from pathlib import Path
 from typing import ClassVar, Any
 
 # Third-Party Packages #
 from baseobjects import BaseComposite
 from baseobjects.cachingtools import CachingObject
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemyobjects import TableManifestation
 
 # Local Packages #
-from .contentsfile import ContentsFile
+from .contentsdatabase import ContentsDatabase
 
 
 # Definitions #
@@ -33,17 +34,19 @@ class BaseCDFS(CachingObject, BaseComposite):
     This class provides the foundational structure and operations for managing a composite distributed file system.
     It integrates caching mechanisms and composite design patterns to handle various components and their interactions.
 
+    Class Attributes:
+        default_component_types: A dictionary defining the default component types and their configurations.
+
     Attributes:
-        default_component_types: Default types for components.
         _path: The file path to the CDFS.
         _is_open: Indicates if the CDFS is currently open.
         _mode: The mode in which the CDFS is opened (e.g., 'r' for read, 'w' for write).
         _swmr_mode: Indicates if Single-Writer-Multiple-Reader mode is enabled.
-        schema: The database schema class.
-        contents_file_type: The type of the contentsfile file.
-        contents_file_name: The name of the contentsfile file.
-        contents_file: The contentsfile file object.
-        tables: A dictionary of table names to table classes.
+        schema: The contents database schema class.
+        table_map: A map which outlines which table are within the contents database.
+        contents_database_type: The type of the contents database file.
+        contents_database_name: The name of the contents database file.
+        contents_database: The contents database file object.
 
     Args:
         path: The path to the CDFS.
@@ -52,7 +55,7 @@ class BaseCDFS(CachingObject, BaseComposite):
         create: Whether to create the CDFS.
         build: Whether to build the CDFS.
         load: Whether to load the CDFS.
-        contents_name: The name of the contentsfile file.
+        contents_name: The name of the contents database file.
         init: Whether to initialize the object.
         **kwargs: Additional keyword arguments.
     """
@@ -61,40 +64,39 @@ class BaseCDFS(CachingObject, BaseComposite):
     default_component_types: ClassVar[dict[str, tuple[type, dict[str, Any]]]] = {}
 
     # Attributes #
-    _path: pathlib.Path | None = None
+    _path: Path | None = None
     _is_open: bool = False
     _mode: str = "r"
     _swmr_mode: bool = False
 
     schema: type[DeclarativeBase] | None = None
+    table_map: dict[str, tuple[type[TableManifestation], type[DeclarativeBase], dict[str, Any]]] = {}
 
-    contents_file_type: type[ContentsFile] = ContentsFile
-    contents_file_name: str = "contentsfile.sqlite3"
-    contents_file: ContentsFile | None = None
-
-    tables: dict[str, type[DeclarativeBase]] = {}
+    contents_database_type: type[ContentsDatabase] = ContentsDatabase
+    contents_database_name: str = "contents.sqlite3"
+    contents_database: ContentsDatabase | None = None
 
     # Properties #
     @property
-    def path(self) -> pathlib.Path:
+    def path(self) -> Path:
         """Gets the path to the BaseCDFS.
 
         Returns:
-            pathlib.Path: The path to the BaseCDFS.
+            path: The path to the BaseCDFS.
         """
         return self._path
 
     @path.setter
-    def path(self, value: str | pathlib.Path) -> None:
+    def path(self, value: str | Path) -> None:
         """Sets the path to the BaseCDFS.
 
         Args:
-            value (str | pathlib.Path): The new path to the BaseCDFS.
+            value (str | Path): The new path to the BaseCDFS.
         """
-        if isinstance(value, pathlib.Path) or value is None:
+        if isinstance(value, Path) or value is None:
             self._path = value
         else:
-            self._path = pathlib.Path(value)
+            self._path = Path(value)
 
     @property
     def is_open(self) -> bool:
@@ -115,19 +117,19 @@ class BaseCDFS(CachingObject, BaseComposite):
         return self._mode
 
     @property
-    def contents_path(self) -> pathlib.Path:
-        """Gets the path to the contentsfile file.
+    def contents_path(self) -> Path:
+        """Gets the path to the contents database.
 
         Returns:
-            pathlib.Path: The path to the contentsfile file.
+            path: The path to the contents database.
         """
-        return self.path / self.contents_file_name
+        return self.path / self.contents_database_name
 
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
-        path: pathlib.Path | str | None = None,
+        path: Path | str | None = None,
         mode: str = "r",
         open_: bool = True,
         create: bool = False,
@@ -139,7 +141,6 @@ class BaseCDFS(CachingObject, BaseComposite):
         **kwargs: Any,
     ) -> None:
         # Attributes #
-        self.tables = self.tables.copy()
 
         # Parent Attributes #
         super().__init__(init=False)
@@ -169,7 +170,7 @@ class BaseCDFS(CachingObject, BaseComposite):
     # Constructors/Destructors
     def construct(
         self,
-        path: pathlib.Path | str | None = None,
+        path: Path | str | None = None,
         mode: str | None = None,
         open_: bool = True,
         create: bool = False,
@@ -187,7 +188,7 @@ class BaseCDFS(CachingObject, BaseComposite):
             create: Whether to create the CDFS.
             build: Whether to build the CDFS.
             load: Whether to load the CDFS.
-            contents_name: The name of the contentsfile file.
+            contents_name: The name of the contents database.
             **kwargs: Additional keyword arguments.
         """
         if path is not None:
@@ -197,7 +198,7 @@ class BaseCDFS(CachingObject, BaseComposite):
             self._mode = mode
 
         if contents_name is not None:
-            self.contents_file_name = contents_name
+            self.contents_database_name = contents_name
 
         super().construct(**kwargs)
 
@@ -233,9 +234,9 @@ class BaseCDFS(CachingObject, BaseComposite):
                     raise ValueError("CDFS does not exist.")
 
             if self.contents_path.exists():
-                self.open_contents_file(**kwargs)
+                self.open_contents_database(**kwargs)
             elif create:
-                self.open_contents_file(create=True, build=build, **kwargs)
+                self.open_contents_database(create=True, build=build, **kwargs)
 
             self._is_open = True
 
@@ -248,8 +249,8 @@ class BaseCDFS(CachingObject, BaseComposite):
         Returns:
             bool: True if the CDFS is closed, False otherwise.
         """
-        if self.contents_file is not None:
-            self.contents_file.close()
+        if self.contents_database is not None:
+            self.contents_database.close()
         self._is_open = False
         return True
 
@@ -259,50 +260,32 @@ class BaseCDFS(CachingObject, BaseComposite):
         Returns:
             bool: True if the CDFS is closed, False otherwise.
         """
-        if self.contents_file is not None:
-            await self.contents_file.close_async()
+        if self.contents_database is not None:
+            await self.contents_database.close_async()
         self._is_open = False
         return True
 
-    # Contents File
-    def open_contents_file(self, create: bool = False, build: bool = True, **kwargs: Any) -> None:
-        """Opens the contentsfile file.
+    # Contents Database
+    def open_contents_database(self, create: bool = False, build: bool = True, **kwargs: Any) -> None:
+        """Opens the contents database.
 
         Args:
-            create: Whether to create the contentsfile file.
-            build: Whether to build the contentsfile file.
+            create: Whether to create the contents database.
+            build: Whether to build the contents database.
             **kwargs: Additional keyword arguments.
         """
-        if self.contents_file is not None:
-            self.contents_file.open(**kwargs)
+        new_kwargs = {
+            "path": self.contents_path, 
+            "schema": self.schema, 
+            "table_map": self.table_map,
+            "open": True, 
+            "create": True,
+        } | kwargs
+        if self.contents_database is not None:
+            self.contents_database.open(**kwargs)
         elif self.contents_path.is_file():
-            self.contents_file = self.contents_file_type(
-                path=self.contents_path,
-                schema=self.schema,
-                open_=True,
-                create=False,
-                **kwargs,
-            )
-        elif not self.contents_path.is_file() and create:
-            self.contents_file = self.contents_file_type(
-                path=self.contents_path,
-                schema=self.schema,
-                open_=True,
-                create=create,
-                **kwargs,
-            )
-            if build and self._mode in {"a", "w"}:
-                self.build_tables()
+            self.contents_database = self.contents_database_type(**new_kwargs)
+            if create and build and self._mode in {"a", "w"}:
+                self.contents_database.build_tables()
         else:
-            raise ValueError("Contents file does not exist.")
-
-    # Components
-    def build_tables(self) -> None:
-        """Builds the tables for the CDFS."""
-        for component in self.components.values():
-            component.build_tables()
-
-    def load_components(self) -> None:
-        """Loads the components for the CDFS."""
-        for component in self.components.values():
-            component.load()
+            raise ValueError("Contents database does not exist.")

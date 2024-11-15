@@ -1,5 +1,5 @@
 """basecontentstable.py
-A table which tracks the contentsfile of multiple files.
+A table which tracks the contents of multiple files.
 """
 # Package Header #
 from cdfs.header import *
@@ -13,14 +13,14 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-import pathlib
+from pathlib import Path
 from typing import Any
 import uuid
 
 # Third-Party Packages #
 from sqlalchemy.orm import Mapped, Session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemyobjects import BaseUpdateTable
+from sqlalchemyobjects.tables import BaseUpdateTable, UpdateTableManifestation
 
 # Local Packages #
 
@@ -28,10 +28,10 @@ from sqlalchemyobjects import BaseUpdateTable
 # Definitions #
 # Classes #
 class BaseContentsTable(BaseUpdateTable):
-    """A table which tracks the contentsfile of multiple files.
+    """A table which tracks the contents of multiple files.
 
-    This class defines a table which tracks the contentsfile of multiple files and methods for formatting entry keyword
-    arguments, correcting contentsfile, and converting entries to dictionaries.
+    This class defines a table which tracks the contents of multiple files and methods for formatting entry keyword
+    arguments, correcting contents, and converting entries to dictionaries.
 
     Attributes:
         __tablename__: The name of the table.
@@ -43,8 +43,8 @@ class BaseContentsTable(BaseUpdateTable):
     """
 
     # Class Attributes #
-    __tablename__ = "contentsfile"
-    __mapper_args__ = {"polymorphic_identity": "contentsfile"}
+    __tablename__ = "contents"
+    __mapper_args__ = {"polymorphic_identity": "contents"}
 
     # Columns #
     path: Mapped[str]
@@ -59,7 +59,7 @@ class BaseContentsTable(BaseUpdateTable):
     def format_entry_kwargs(
         cls,
         id_: str | uuid.UUID | None = None,
-        path: pathlib.Path | str = "",
+        path: Path | str = "",
         axis: int = 0,
         shape: tuple[int] = (0,),
         **kwargs: Any,
@@ -78,31 +78,58 @@ class BaseContentsTable(BaseUpdateTable):
         """
         kwargs = super().format_entry_kwargs(id_=id_, **kwargs)
         kwargs.update(
-            path=path.as_posix() if isinstance(path, pathlib.Path) else path,
+            path=path.as_posix() if isinstance(path, Path) else path,
             axis=axis,
             shape=str(shape).strip("()"),
         )
         return kwargs
 
     @classmethod
-    def correct_contents(cls, session: Session, path: pathlib.Path, begin: bool = False) -> None:
+    def _correct_contents(cls, session: Session, path: Path) -> None:
+        """Corrects the contents of the table based on the provided path.
+
+        Args:
+            session: The SQLAlchemy session to use for the operation.
+            path: The path of the content to correct.
+
+        Raises:
+            NotImplementedError: This method is not implemented.
+        """
+        raise NotImplemented
+
+    @classmethod
+    def correct_contents(cls, session: Session, path: Path, begin: bool = False) -> None:
         """Corrects the contents of the table based on the provided path.
 
         Args:
             session: The SQLAlchemy session to use for the operation.
             path: The path of the content to correct.
             begin: If True, begins a transaction for the operation. Defaults to False.
+        """
+        if begin:
+            with session.begin():
+                cls._correct_contents(session=session, path=path)
+        else:
+            cls._correct_contents(session=session, path=path)
+
+    @classmethod
+    async def _correct_contents_async(cls, session: AsyncSession, path: Path) -> None:
+        """Asynchronously corrects the contents of the table based on the provided path.
+
+        Args:
+            session: The SQLAlchemy async session to use for the operation.
+            path: The path of the content to correct.
 
         Raises:
             NotImplementedError: This method is not implemented.
         """
-        raise NotImplementedError
+        raise NotImplemented
 
     @classmethod
     async def correct_contents_async(
         cls,
         session: AsyncSession,
-        path: pathlib.Path,
+        path: Path,
         begin: bool = False,
     ) -> None:
         """Asynchronously corrects the contents of the table based on the provided path.
@@ -111,11 +138,12 @@ class BaseContentsTable(BaseUpdateTable):
             session: The SQLAlchemy async session to use for the operation.
             path: The path of the content to correct.
             begin: If True, begins a transaction for the operation. Defaults to False.
-
-        Raises:
-            NotImplementedError: This method is not implemented.
         """
-        raise NotImplementedError
+        if begin:
+            async with session.begin():
+                await cls._correct_contents_async(session=session, path=path)
+        else:
+            await cls._correct_contents_async(session=session, path=path)
 
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
@@ -161,3 +189,57 @@ class BaseContentsTable(BaseUpdateTable):
             shape=tuple(int(i) for i in self.shape.split(", ")),
         )
         return entry
+
+
+class ContentsTableManifestation(UpdateTableManifestation):
+    """The manifestation of a ContentsTable.
+
+    Attributes:
+        _database: A weak reference to the SQAlchemy database to interface with.
+        table: The SQLAlchemy declarative table which this object act as the interface for.
+
+    Args:
+        table: The SQLAlchemy declarative table which this object act as the interface for.
+        database: The SQAlchemy database to interface with.
+        init: Determines if this object will construct.
+        **kwargs: Additional keyword arguments.
+    """
+
+    # Contents
+    def correct_contents(
+        self,
+        path: Path,
+        session: Session | None = None,
+        begin: bool = False,
+    ) -> None:
+        """Corrects the contents of the file.
+
+        Args:
+            path: The path to the file.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
+        if session is not None:
+            self.table.correct_contents(session=session, path=path, begin=begin)
+        else:
+            with self.create_session() as session:
+                self.table.correct_contents(session=session, path=path, begin=True)
+
+    async def correct_contents_async(
+        self,
+        path: Path,
+        session: AsyncSession | None = None,
+        begin: bool = False,
+    ) -> None:
+        """Asynchronously corrects the contents of the file.
+
+        Args:
+            path: The path to the file.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
+        if session is not None:
+            await self.table.correct_contents_async(session=session, path=path, begin=begin)
+        else:
+            async with self.create_async_session() as session:
+                await self.table.correct_contents_async(session=session, path=path, begin=True)

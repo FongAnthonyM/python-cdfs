@@ -13,16 +13,14 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from typing import Any
+from weakref import ref
 
 # Third-Party Packages #
 from baseobjects import BaseComponent
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemyobjects.tables import TableManifestation
 
 # Local Packages #
-from cdfs.contentsfile.contentsfile import ContentsFile
-from cdfs.contentsfile.tables import BaseTable
+from ..contentsdatabase import ContentsDatabase
 
 
 # Definitions #
@@ -39,57 +37,22 @@ class BaseCDFSComponent(BaseComponent):
         **kwargs: Keyword arguments for inheritance.
     """
 
+    # Attributes #
+    _composite: ref[ContentsDatabase] | None = None
+
     # Properties #
     @property
-    def contents_file(self) -> ContentsFile | None:
-        """The contentsfile file of the CDFS."""
+    def contents_database(self) -> ContentsDatabase | None:
+        """The contents database of the CDFS."""
         try:
-            return self._composite().contents_file
+            return self._composite().contents_database
         except TypeError:
             return None
 
     @property
-    def tables(self) -> dict[str, type[BaseTable]] | None:
+    def contents_tables(self) -> dict[str, TableManifestation] | None:
         """The tables of the CDFS."""
         try:
-            return self._composite().tables
+            return self._composite().contents_database.tables
         except TypeError:
             return None
-        
-    # Instance Methods #
-    # Construction/Destruction
-    def build(self, *args: Any, **kwargs: Any) -> None:
-        """Build the component."""
-
-    # File
-    def load(self, *args: Any, **kwargs: Any) -> None:
-        """Load the component."""
-
-    # Session
-    def create_session(self, *args: Any, **kwargs: Any) -> Session:
-        """Creates a new SQLAlchemy session.
-
-        Args:
-            *args: Positional arguments for session creation.
-            **kwargs: Keyword arguments for session creation.
-
-        Returns:
-            Session: A new SQLAlchemy session.
-        """
-        return self._composite().contents_file.create_session(*args, **kwargs)
-
-    def create_async_session(self, *args: Any, **kwargs: Any) -> AsyncSession:
-        """Creates a new asynchronous SQLAlchemy session.
-
-        Args:
-            *args : Positional arguments for session creation.
-            **kwargs: Keyword arguments for session creation.
-
-        Returns:
-            AsyncSession: A new asynchronous SQLAlchemy session.
-        """
-        return self._composite().contents_file.create_async_session(*args, **kwargs)
-
-    # Table
-    def build_tables(self, *args: Any, **kwargs: Any) -> None:
-        """Build the table for the component."""
