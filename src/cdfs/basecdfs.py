@@ -40,9 +40,9 @@ class BaseCDFS(CachingObject, BaseComposite):
         _mode: The mode in which the CDFS is opened (e.g., 'r' for read, 'w' for write).
         _swmr_mode: Indicates if Single-Writer-Multiple-Reader mode is enabled.
         schema: The database schema class.
-        contents_file_type: The type of the contents file.
-        contents_file_name: The name of the contents file.
-        contents_file: The contents file object.
+        contents_file_type: The type of the contentsfile file.
+        contents_file_name: The name of the contentsfile file.
+        contents_file: The contentsfile file object.
         tables: A dictionary of table names to table classes.
 
     Args:
@@ -52,7 +52,7 @@ class BaseCDFS(CachingObject, BaseComposite):
         create: Whether to create the CDFS.
         build: Whether to build the CDFS.
         load: Whether to load the CDFS.
-        contents_name: The name of the contents file.
+        contents_name: The name of the contentsfile file.
         init: Whether to initialize the object.
         **kwargs: Additional keyword arguments.
     """
@@ -69,7 +69,7 @@ class BaseCDFS(CachingObject, BaseComposite):
     schema: type[DeclarativeBase] | None = None
 
     contents_file_type: type[ContentsFile] = ContentsFile
-    contents_file_name: str = "contents.sqlite3"
+    contents_file_name: str = "contentsfile.sqlite3"
     contents_file: ContentsFile | None = None
 
     tables: dict[str, type[DeclarativeBase]] = {}
@@ -116,10 +116,10 @@ class BaseCDFS(CachingObject, BaseComposite):
 
     @property
     def contents_path(self) -> pathlib.Path:
-        """Gets the path to the contents file.
+        """Gets the path to the contentsfile file.
 
         Returns:
-            pathlib.Path: The path to the contents file.
+            pathlib.Path: The path to the contentsfile file.
         """
         return self.path / self.contents_file_name
 
@@ -187,7 +187,7 @@ class BaseCDFS(CachingObject, BaseComposite):
             create: Whether to create the CDFS.
             build: Whether to build the CDFS.
             load: Whether to load the CDFS.
-            contents_name: The name of the contents file.
+            contents_name: The name of the contentsfile file.
             **kwargs: Additional keyword arguments.
         """
         if path is not None:
@@ -266,11 +266,11 @@ class BaseCDFS(CachingObject, BaseComposite):
 
     # Contents File
     def open_contents_file(self, create: bool = False, build: bool = True, **kwargs: Any) -> None:
-        """Opens the contents file.
+        """Opens the contentsfile file.
 
         Args:
-            create: Whether to create the contents file.
-            build: Whether to build the contents file.
+            create: Whether to create the contentsfile file.
+            build: Whether to build the contentsfile file.
             **kwargs: Additional keyword arguments.
         """
         if self.contents_file is not None:

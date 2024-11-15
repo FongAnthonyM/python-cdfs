@@ -17,10 +17,10 @@ from typing import Any
 
 # Third-Party Packages #
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
-from ..tables import BaseMetaInformationTable
+from cdfs.contentsfile.tables import BaseMetaInformationTable
 from .basetablecdfscomponent import BaseTableCDFSComponent
 
 

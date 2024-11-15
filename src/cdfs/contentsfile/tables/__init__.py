@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ..header import *
+from cdfs.header import *
 
 # Header #
 __author__ = __author__
@@ -13,7 +13,6 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .basetable import BaseTable
 from .basemetainformationtable import BaseMetaInformationTable
 from .basecontentstable import BaseContentsTable
 from .basetimecontentstable import BaseTimeContentsTable

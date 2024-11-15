@@ -21,8 +21,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
-from ..contentsfile import ContentsFile
-from ..tables import BaseTable
+from cdfs.contentsfile.contentsfile import ContentsFile
+from cdfs.contentsfile.tables import BaseTable
 
 
 # Definitions #
@@ -42,7 +42,7 @@ class BaseCDFSComponent(BaseComponent):
     # Properties #
     @property
     def contents_file(self) -> ContentsFile | None:
-        """The contents file of the CDFS."""
+        """The contentsfile file of the CDFS."""
         try:
             return self._composite().contents_file
         except TypeError:

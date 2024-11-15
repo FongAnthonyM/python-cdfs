@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
-from ..tables import BaseTable
+from cdfs.contentsfile.tables import BaseTable
 from .basecdfscomponent import BaseCDFSComponent
 
 
@@ -443,7 +443,7 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         session: Session | None = None,
         begin: bool = False,
     ) -> None:
-        """Corrects the contents of the file. (Abstract)
+        """Corrects the contentsfile of the file. (Abstract)
 
         Args:
             path: The path to the file.
@@ -457,7 +457,7 @@ class BaseTableCDFSComponent(BaseCDFSComponent):
         session: AsyncSession | None = None,
         begin: bool = False,
     ) -> None:
-        """Asynchronously corrects the contents of the file. (Abstract)
+        """Asynchronously corrects the contentsfile of the file. (Abstract)
 
         Args:
             path: The path to the file.

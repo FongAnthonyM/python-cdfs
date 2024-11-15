@@ -32,7 +32,7 @@ import numpy as np
 # Definitions #
 # Classes #
 class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
-    """A base class for time contents leaf containers in a file time series.
+    """A base class for time contentsfile leaf containers in a file time series.
 
     This class provides properties and methods to handle time-related attributes such as sample rate, start and end
     timestamps, and time zone information.
@@ -509,7 +509,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
 
 
 class TimeContentsProxy(TimeContentsNodeProxy):
-    """The root node proxy class for managing time contents in a directory time series.
+    """The root node proxy class for managing time contentsfile in a directory time series.
 
     Attributes:
         default_proxy_type: The default type of the proxy.
@@ -521,7 +521,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         path: The path for this proxy to manage.
         cdfs_component: The CDFS component to create the tree from.
         proxies: An iterable with tree objects to store in this proxy.
-        mode: Determines if the contents of this proxy are editable or not.
+        mode: Determines if the contentsfile of this proxy are editable or not.
         update: Determines if this proxy will start updating or not.
         open_: Determines if the proxies will remain open after construction.
         build: Determines if the proxies will be constructed.
@@ -586,7 +586,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             path (pathlib.Path | str | None): The path for this proxy to wrap.
             cdfs_component (Optional[TimeContentsCDFSComponent]): The CDFS component associated with this proxy.
             proxies (Iterable[BaseDirectoryTimeSeries] | None): An iterable holding arrays/objects to store in this proxy.
-            mode (str): Determines if the contents of this proxy are editable or not.
+            mode (str): Determines if the contentsfile of this proxy are editable or not.
             update (bool): Determines if this proxy will start updating or not.
             open_ (bool): Determines if the arrays will remain open after construction.
             build (bool): Determines if the arrays will be constructed.
@@ -693,10 +693,10 @@ class TimeContentsProxy(TimeContentsNodeProxy):
 
     # Time Information
     def get_tzinfo(self) -> datetime.tzinfo:
-        """Gets the tzinfo from the contents file.
+        """Gets the tzinfo from the contentsfile file.
 
         Returns:
-            datetime.tzinfo: The tzinfo from the contents file.
+            datetime.tzinfo: The tzinfo from the contentsfile file.
         """
         tz_offset = self.cdfs_component.get_tz_offsets_distinct()[0][0]
         self.tzinfo = datetime.timezone(datetime.timedelta(seconds=tz_offset))  # Make this a property in a parent

@@ -15,17 +15,16 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-import asyncio
 import pathlib
 
 # Third-Party Packages #
 import pytest
-from sqlalchemy.orm import DeclarativeBase, Session
-from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
 # Local Packages #
 from src.cdfs import BaseCDFS
-from src.cdfs.tables import BaseMetaInformationTable, BaseTimeContentsTable
+from cdfs.contentsfile.tables import BaseMetaInformationTable, BaseTimeContentsTable
 from src.cdfs.components import MetaInformationCDFSComponent, TimeContentsCDFSComponent
 
 
@@ -54,7 +53,7 @@ class CDFSTest(BaseCDFS):
     schema = ContentsFileAsyncSchema
     default_component_types = {
         "meta_information": (MetaInformationCDFSComponent, {}),
-        "contents": (TimeContentsCDFSComponent, {}),
+        "contentsfile": (TimeContentsCDFSComponent, {}),
     }
 
 

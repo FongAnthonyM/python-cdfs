@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ..header import *
+from cdfs.header import *
 
 # Header #
 __author__ = __author__
@@ -19,14 +19,14 @@ from typing import Any, Union
 from sqlalchemy import select, lambda_stmt
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemyobjects.tables import BaseMetaInformationTable
 
 # Local Packages #
-from .basetable import BaseTable
 
 
 # Definitions #
 # Classes #
-class BaseMetaInformationTable(BaseTable):
+class BaseMetaInformationTable(BaseMetaInformationTable):
     """A table for storing meta-information in a SQLAlchemy ORM model.
 
     This class extends the BaseTable class and provides additional methods for creating, retrieving, and updating

@@ -1,8 +1,8 @@
 """basecontentstable.py
-A table which tracks the contents of multiple files.
+A table which tracks the contentsfile of multiple files.
 """
 # Package Header #
-from ..header import *
+from cdfs.header import *
 
 # Header #
 __author__ = __author__
@@ -20,18 +20,18 @@ import uuid
 # Third-Party Packages #
 from sqlalchemy.orm import Mapped, Session
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemyobjects import BaseUpdateTable
 
 # Local Packages #
-from .basetable import BaseTable
 
 
 # Definitions #
 # Classes #
-class BaseContentsTable(BaseTable):
-    """A table which tracks the contents of multiple files.
+class BaseContentsTable(BaseUpdateTable):
+    """A table which tracks the contentsfile of multiple files.
 
-    This class defines a table which tracks the contents of multiple files and methods for formatting entry keyword
-    arguments, correcting contents, and converting entries to dictionaries.
+    This class defines a table which tracks the contentsfile of multiple files and methods for formatting entry keyword
+    arguments, correcting contentsfile, and converting entries to dictionaries.
 
     Attributes:
         __tablename__: The name of the table.
@@ -43,8 +43,8 @@ class BaseContentsTable(BaseTable):
     """
 
     # Class Attributes #
-    __tablename__ = "contents"
-    __mapper_args__ = {"polymorphic_identity": "contents"}
+    __tablename__ = "contentsfile"
+    __mapper_args__ = {"polymorphic_identity": "contentsfile"}
 
     # Columns #
     path: Mapped[str]
@@ -135,7 +135,7 @@ class BaseContentsTable(BaseTable):
         super().update(dict_)
 
     def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with all the contents of the row.
+        """Creates a dictionary with the contents of the row.
 
         Returns:
             dict[str, Any]: A dictionary representation of the row.

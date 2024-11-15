@@ -2,7 +2,7 @@
 A component for managing time-based contentsfile in a CDFS.
 """
 # Package Header #
-from ..header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -21,14 +21,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
-from ..arrays import TimeContentsProxy
+from ...arrays import TimeContentsProxy
 from cdfs.contentsfile.tables import BaseTimeContentsTable
-from .basetablecdfscomponent import BaseTableCDFSComponent
+from .basecontentstablecomponent import BaseContentsTableComponent
 
 
 # Definitions #
 # Classes #
-class TimeContentsCDFSComponent(BaseTableCDFSComponent):
+class TimeContentsCDFSComponent(BaseContentsTableComponent):
     """A component for managing time-based contentsfile in a CDFS.
 
     Attributes:
@@ -67,7 +67,7 @@ class TimeContentsCDFSComponent(BaseTableCDFSComponent):
         session: Session | None = None,
         begin: bool = False,
     ) -> None:
-        """Corrects the contentsfile of the file.
+        """Corrects the contents of the file.
 
         Args:
             path: The path to the file.

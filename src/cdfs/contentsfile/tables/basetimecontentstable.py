@@ -1,8 +1,8 @@
 """basetimecontentstable.py
-A table which tracks the contents of multiple files with time-related metadata.
+A table which tracks the contentsfile of multiple files with time-related metadata.
 """
 # Package Header #
-from ..header import *
+from cdfs.header import *
 
 # Header #
 __author__ = __author__
@@ -36,7 +36,7 @@ from .basecontentstable import BaseContentsTable
 # Definitions #
 # Classes #
 class BaseTimeContentsTable(BaseContentsTable):
-    """A table which tracks the contents of multiple files with time-related metadata.
+    """A table which tracks the contentsfile of multiple files with time-related metadata.
 
     This class extends BaseContentsTable to include time-related metadata such as timezone offset, start and end times,
     and sample rate.
@@ -265,7 +265,7 @@ class BaseTimeContentsTable(BaseContentsTable):
         super().update(dict_)
 
     def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with all the contents of the row.
+        """Creates a dictionary with all the contentsfile of the row.
 
         Returns:
             dict[str, Any]: A dictionary representation of the row.
@@ -280,7 +280,7 @@ class BaseTimeContentsTable(BaseContentsTable):
         return entry
 
     def as_entry(self) -> dict[str, Any]:
-        """Creates a dictionary with the entry contents of the row.
+        """Creates a dictionary with the entry contentsfile of the row.
 
         Returns:
             dict[str, Any]: A dictionary representation of the entry.
