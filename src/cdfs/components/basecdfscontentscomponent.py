@@ -1,5 +1,5 @@
 """ basecdfscontentscomponent.py.py
-
+A base class for CDFS components that interact with a contents table.
 """
 # Package Header #
 from ..header import *

@@ -15,7 +15,9 @@ __email__ = __email__
 # Standard Libraries #
 from abc import abstractmethod
 from collections.abc import Iterable
-import datetime
+from datetime import datetime, timezone
+from datetime import timedelta as Timezone
+from datetime import tzinfo as TZInfo
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Optional
@@ -51,7 +53,7 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
 
     _shape: tuple[int] | None = None
     _sample_rate: Decimal | None = None
-    _tzinfo: datetime.tzinfo | None = None
+    _tzinfo: TZInfo | None = None
     _start: int | None = None
     _end: int | None = None
 
@@ -62,12 +64,12 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         return self._is_open()
 
     @property
-    def tzinfo(self) -> datetime.tzinfo | None:
-        """datetime.tzinfo | None: Gets or sets the time zone information."""
+    def tzinfo(self) -> TZInfo | None:
+        """TZInfo | None: Gets or sets the time zone information."""
         return self.get_tzinfo()
 
     @tzinfo.setter
-    def tzinfo(self, value: datetime.tzinfo | None) -> None:
+    def tzinfo(self, value: TZInfo | None) -> None:
         self._tzinfo = value
 
     @property
@@ -135,9 +137,9 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         axis: int | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
-        start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        tzinfo: datetime.tzinfo | None = None,
+        start: datetime | float | int | np.dtype | np.ndarray = None,
+        end: datetime | float | int | np.dtype | np.ndarray = None,
+        tzinfo: TZInfo | None = None,
         *,
         path: str | Path | None = None,
         init: bool = True,
@@ -188,9 +190,9 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         axis: int | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
-        start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        tzinfo: datetime.tzinfo | None = None,
+        start: datetime | float | int | np.dtype | np.ndarray = None,
+        end: datetime | float | int | np.dtype | np.ndarray = None,
+        tzinfo: TZInfo | None = None,
         *,
         path: str | Path | None = None,
         **kwargs: Any,
@@ -249,9 +251,9 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         axis: int | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
-        start: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        end: datetime.datetime | float | int | np.dtype | np.ndarray = None,
-        tzinfo: datetime.tzinfo | None = None,
+        start: datetime | float | int | np.dtype | np.ndarray = None,
+        end: datetime | float | int | np.dtype | np.ndarray = None,
+        tzinfo: TZInfo | None = None,
         **kwargs: Any,
     ) -> None:
         """Updates the default values for this proxy.
@@ -342,10 +344,10 @@ class BaseTimeContentsLeafContainer(BaseContainerFileTimeSeries):
         """
         return 1 / self.get_sample_rate_decimal()
 
-    def _get_tzinfo(self) -> datetime.tzinfo | None:
+    def _get_tzinfo(self) -> TZInfo | None:
         return self.time_axis.tzinfo
 
-    def get_tzinfo(self) -> datetime.tzinfo | None:
+    def get_tzinfo(self) -> TZInfo | None:
         """Gets the time zone of the contained arrays.
 
         Args:
@@ -692,14 +694,14 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
 
     # Time Information
-    def get_tzinfo(self) -> datetime.tzinfo:
+    def get_tzinfo(self) -> TZInfo:
         """Gets the tzinfo from the contents database file.
 
         Returns:
-            datetime.tzinfo: The tzinfo from the contents database file.
+            TZInfo: The tzinfo from the contents database file.
         """
         tz_offset = self.table.get_tz_offsets_distinct()[0][0]
-        self.tzinfo = datetime.timezone(datetime.timedelta(seconds=tz_offset))  # Make this a property in a parent
+        self.tzinfo = Timezone(timedelta(seconds=tz_offset))  # Make this a property in a parent
         return self.tzinfo
 
 

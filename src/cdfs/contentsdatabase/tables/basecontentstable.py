@@ -15,7 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 from pathlib import Path
 from typing import Any
-import uuid
+from uuid import UUID
 
 # Third-Party Packages #
 from sqlalchemy.orm import Mapped, Session
@@ -58,7 +58,7 @@ class BaseContentsTable(BaseUpdateTable):
     @classmethod
     def format_entry_kwargs(
         cls,
-        id_: str | uuid.UUID | None = None,
+        id_: str | UUID | None = None,
         path: Path | str = "",
         axis: int = 0,
         shape: tuple[int] = (0,),
@@ -155,7 +155,7 @@ class BaseContentsTable(BaseUpdateTable):
         """
         dict_ = ({} if dict_ is None else dict_) | kwargs
         if (path := dict_.get("path", None)) is not None:
-            self.path = path.as_posix() if isinstance(path, pathlib.Path) else path
+            self.path = path.as_posix() if isinstance(path, Path) else path
         if (axis := dict_.get("axis", None)) is not None:
             self.axis = axis
         if (shape := dict_.get("shape", None)) is not None:

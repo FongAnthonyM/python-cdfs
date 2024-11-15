@@ -1,5 +1,5 @@
 """ cdfstimecontentscomponent.py.py
-
+A CDFS component for managing time-based contents in a CDFS.
 """
 # Package Header #
 from ..header import *
@@ -13,7 +13,6 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from typing import Any
 
 # Third-Party Packages #
 

@@ -1,5 +1,5 @@
 """basetimecontentstable.py
-A table which tracks the contents of multiple files with time-related metadata.
+A table which tracks the contents of multiple files with time-related data.
 """
 # Package Header #
 from ...header import *
@@ -13,12 +13,14 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-import datetime
+from datetime import datetime, timedelta
+from datetime import tzinfo as TZInfo
+from datetime import timezone as Timezone
 from decimal import Decimal
 import time
 from typing import Any
-import uuid
-import zoneinfo
+from uuid import UUID
+from zoneinfo import ZoneInfo
 
 # Third-Party Packages #
 from baseobjects.operations import timezone_offset
@@ -30,14 +32,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import BigInteger
 
 # Local Packages #
-from ...arrays import TimeContentsProxy
 from .basecontentstable import BaseContentsTable, ContentsTableManifestation
 
 
 # Definitions #
 # Classes #
 class BaseTimeContentsTable(BaseContentsTable):
-    """A table which tracks the contents of multiple files with time-related metadata.
+    """A table which tracks the contents of multiple files with time-related data.
 
     This class extends BaseContentsTable to include time-related metadata such as timezone offset, start and end times,
     and sample rate.
@@ -65,13 +66,13 @@ class BaseTimeContentsTable(BaseContentsTable):
     @classmethod
     def format_entry_kwargs(
         cls,
-        id_: str | uuid.UUID | None = None,
+        id_: str | UUID | None = None,
         path: str = "",
         axis: int = 0,
         shape: tuple[int] = (0,),
-        timezone: str | datetime.datetime | int | None = None,
-        start: datetime.datetime | float | int | np.dtype | None = None,
-        end: datetime.datetime | float | int | np.dtype | None = None,
+        timezone: str | datetime | int | None = None,
+        start: datetime | float | int | np.dtype | None = None,
+        end: datetime | float | int | np.dtype | None = None,
         sample_rate: float | str | Decimal | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
@@ -97,9 +98,9 @@ class BaseTimeContentsTable(BaseContentsTable):
             if timezone.lower() == "local" or timezone.lower() == "localtime":
                 timezone = time.localtime().tm_gmtoff
             else:
-                timezone = zoneinfo.ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
+                timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
 
-        tz_offset = timezone_offset(timezone).total_seconds() if isinstance(timezone, datetime.tzinfo) else timezone
+        tz_offset = timezone_offset(timezone).total_seconds() if isinstance(timezone, TZInfo) else timezone
 
         kwargs.update(
             tz_offset=tz_offset,
@@ -151,7 +152,7 @@ class BaseTimeContentsTable(BaseContentsTable):
         elif offset is None:
             return Timestamp.fromnanostamp(nanostamp_)
         else:
-            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+            return Timestamp.fromnanostamp(nanostamp_, Timezone(timedelta(seconds=offset)))
 
     @classmethod
     async def get_start_datetime_async(cls, session: AsyncSession) -> Timestamp | None:
@@ -170,7 +171,7 @@ class BaseTimeContentsTable(BaseContentsTable):
         elif offset is None:
             return Timestamp.fromnanostamp(nanostamp_)
         else:
-            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+            return Timestamp.fromnanostamp(nanostamp_, Timezone(timedelta(seconds=offset)))
 
     @classmethod
     def get_end_datetime(cls, session: Session) -> Timestamp | None:
@@ -188,7 +189,7 @@ class BaseTimeContentsTable(BaseContentsTable):
         elif offset is None:
             return Timestamp.fromnanostamp(nanostamp_)
         else:
-            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+            return Timestamp.fromnanostamp(nanostamp_, Timezone(timedelta(seconds=offset)))
 
     @classmethod
     async def get_end_datetime_async(cls, session: AsyncSession) -> Timestamp | None:
@@ -207,7 +208,7 @@ class BaseTimeContentsTable(BaseContentsTable):
         elif offset is None:
             return Timestamp.fromnanostamp(nanostamp_)
         else:
-            return Timestamp.fromnanostamp(nanostamp_, datetime.timezone(datetime.timedelta(seconds=offset)))
+            return Timestamp.fromnanostamp(nanostamp_, Timezone(timedelta(seconds=offset)))
 
     @classmethod
     def get_all_nanostamps(cls, session: Session) -> tuple[tuple[int, int, int], ...]:
@@ -250,10 +251,10 @@ class BaseTimeContentsTable(BaseContentsTable):
                 if timezone.lower() == "local" or timezone.lower() == "localtime":
                     timezone = time.localtime().tm_gmtoff
                 else:
-                    timezone = zoneinfo.ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
+                    timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
 
-            if isinstance(timezone, datetime.tzinfo):
-                self.tz_offset = timezone_offset(timezone).total_seconds()
+            if isinstance(timezone, TZInfo):
+                self.tz_offset = int(timezone_offset(timezone).total_seconds())
             else:
                 self.tz_offset = timezone
 
@@ -287,7 +288,7 @@ class BaseTimeContentsTable(BaseContentsTable):
             dict[str, Any]: A dictionary representation of the entry.
         """
         entry = super().as_entry()
-        tzone = datetime.timezone(datetime.timedelta(seconds=self.tz_offset))
+        tzone = Timezone(timedelta(seconds=self.tz_offset))
         entry.update(
             tz_offset=tzone,
             start=Timestamp.fromnanostamp(self.start, tzone),

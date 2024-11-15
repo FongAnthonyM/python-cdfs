@@ -1,5 +1,5 @@
 """basecdfscomponent.py.py
-
+A base class for CDFS components.
 """
 # Package Header #
 from ..header import *
