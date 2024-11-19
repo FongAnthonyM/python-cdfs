@@ -15,8 +15,8 @@ __email__ = __email__
 # Standard Libraries #
 from abc import abstractmethod
 from collections.abc import Iterable
-from datetime import datetime, timezone
-from datetime import timedelta as Timezone
+from datetime import datetime, timedelta
+from datetime import timezone as Timezone
 from datetime import tzinfo as TZInfo
 from decimal import Decimal
 from pathlib import Path

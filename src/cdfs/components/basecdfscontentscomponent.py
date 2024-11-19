@@ -45,7 +45,7 @@ class BaseCDFSContentsComponent(BaseCDFSComponent):
             The contents table.
         """
         if self._contents_table is None:
-            self._contents_table = self._composite().contents_database.contents_tables[self.table_name]
+            self._contents_table = self._composite().contents_database.tables[self.table_name]
         return self._contents_table
 
     # Magic Methods #

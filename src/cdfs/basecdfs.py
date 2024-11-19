@@ -241,7 +241,7 @@ class BaseCDFS(CachingObject, BaseComposite):
             self._is_open = True
 
             if load:
-                self.load_components()
+                self.contents_database.load_tables()
 
     def close(self) -> bool:
         """Closes the CDFS.
@@ -278,7 +278,7 @@ class BaseCDFS(CachingObject, BaseComposite):
             "path": self.contents_path, 
             "schema": self.schema, 
             "table_map": self.table_map,
-            "open": True, 
+            "open_": True,
             "create": True,
         } | kwargs
         if self.contents_database is not None:
