@@ -13,5 +13,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .basecontentstable import BaseContentsTable, ContentsTableManifestation
-from .basetimecontentstable import BaseTimeContentsTable, TimeContentsTableManifestation
+from .basecontentstable import BaseContentsTableSchema, ContentsTableManifestation
+from .basetimecontentstable import BaseTimeContentsTableSchema, TimeContentsTableManifestation

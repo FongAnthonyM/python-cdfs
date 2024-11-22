@@ -20,15 +20,15 @@ from uuid import UUID
 # Third-Party Packages #
 from sqlalchemy.orm import Mapped, Session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemyobjects.tables import BaseUpdateTable, UpdateTableManifestation
+from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifestation
 
 # Local Packages #
 
 
 # Definitions #
 # Classes #
-class BaseContentsTable(BaseUpdateTable):
-    """A table which tracks the contents of multiple files.
+class BaseContentsTableSchema(BaseUpdateTableSchema):
+    """A schema for a table which tracks the contents of multiple files.
 
     This class defines a table which tracks the contents of multiple files and methods for formatting entry keyword
     arguments, correcting contents, and converting entries to dictionaries.
@@ -196,10 +196,10 @@ class ContentsTableManifestation(UpdateTableManifestation):
 
     Attributes:
         _database: A weak reference to the SQAlchemy database to interface with.
-        table: The SQLAlchemy declarative table which this object act as the interface for.
+        table_schema: The SQLAlchemy declarative table which this object act as the interface for.
 
     Args:
-        table: The SQLAlchemy declarative table which this object act as the interface for.
+        table_schema: The SQLAlchemy declarative table which this object act as the interface for.
         database: The SQAlchemy database to interface with.
         init: Determines if this object will construct.
         **kwargs: Additional keyword arguments.
@@ -220,10 +220,10 @@ class ContentsTableManifestation(UpdateTableManifestation):
             begin: If True, begins a transaction for the operation. Defaults to False.
         """
         if session is not None:
-            self.table.correct_contents(session=session, path=path, begin=begin)
+            self.table_schema.correct_contents(session=session, path=path, begin=begin)
         else:
             with self.create_session() as session:
-                self.table.correct_contents(session=session, path=path, begin=True)
+                self.table_schema.correct_contents(session=session, path=path, begin=True)
 
     async def correct_contents_async(
         self,
@@ -239,7 +239,7 @@ class ContentsTableManifestation(UpdateTableManifestation):
             begin: If True, begins a transaction for the operation. Defaults to False.
         """
         if session is not None:
-            await self.table.correct_contents_async(session=session, path=path, begin=begin)
+            await self.table_schema.correct_contents_async(session=session, path=path, begin=begin)
         else:
             async with self.create_async_session() as session:
-                await self.table.correct_contents_async(session=session, path=path, begin=True)
+                await self.table_schema.correct_contents_async(session=session, path=path, begin=True)

@@ -32,12 +32,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import BigInteger
 
 # Local Packages #
-from .basecontentstable import BaseContentsTable, ContentsTableManifestation
+from .basecontentstable import BaseContentsTableSchema, ContentsTableManifestation
 
 
 # Definitions #
 # Classes #
-class BaseTimeContentsTable(BaseContentsTable):
+class BaseTimeContentsTableSchema(BaseContentsTableSchema):
     """A table which tracks the contents of multiple files with time-related data.
 
     This class extends BaseContentsTable to include time-related metadata such as timezone offset, start and end times,
@@ -303,17 +303,17 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
 
     Attributes:
         _database: A weak reference to the SQAlchemy database to interface with.
-        table: The SQLAlchemy declarative table which this object act as the interface for.
+        table_schema: The SQLAlchemy declarative table which this object act as the interface for.
 
     Args:
-        table: The SQLAlchemy declarative table which this object act as the interface for.
+        table_schema: The SQLAlchemy declarative table which this object act as the interface for.
         database: The SQAlchemy database to interface with.
         init: Determines if this object will construct.
         **kwargs: Additional keyword arguments.
     """
 
     # Attributes #
-    _table: type[BaseTimeContentsTable] | None = None
+    table_schema: type[BaseTimeContentsTableSchema] | None = None
 
     # Properties #
     @property
@@ -336,7 +336,7 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
 
     # Instance Methods #
     # Meta Information
-    def get_tz_offsets_distinct(self, session: Session | None = None) -> Timestamp:
+    def get_tz_offsets_distinct(self, session: Session | None = None) -> tuple | None:
         """Gets distinct timezone offsets from the table.
 
         Args:
@@ -346,12 +346,12 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
             Timestamp: The distinct timezone offsets.
         """
         if session is not None:
-            return self.table.get_tz_offsets_distinct(session=session)
+            return self.table_schema.get_tz_offsets_distinct(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_tz_offsets_distinct(session=session)
+                return self.table_schema.get_tz_offsets_distinct(session=session)
 
-    async def get_tz_offsets_distinct_async(self, session: Session | None = None) -> Timestamp:
+    async def get_tz_offsets_distinct_async(self, session: AsyncSession | None = None) -> tuple | None:
         """Asynchronously gets distinct timezone offsets from the table.
 
         Args:
@@ -361,10 +361,10 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
             Timestamp: The distinct timezone offsets.
         """
         if session is not None:
-            return await self.table.get_tz_offsets_distinct_async(session=session)
+            return await self.table_schema.get_tz_offsets_distinct_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_tz_offsets_distinct_async(session=session)
+                return await self.table_schema.get_tz_offsets_distinct_async(session=session)
 
     def get_start_datetime(self, session: Session | None = None) -> Timestamp:
         """Gets the start datetime from the table.
@@ -376,10 +376,10 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
             Timestamp: The start datetime.
         """
         if session is not None:
-            return self.table.get_start_datetime(session=session)
+            return self.table_schema.get_start_datetime(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_start_datetime(session=session)
+                return self.table_schema.get_start_datetime(session=session)
 
     async def get_start_datetime_async(self, session: AsyncSession | None = None) -> Timestamp:
         """Asynchronously gets the start datetime from the table.
@@ -391,10 +391,10 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
             Timestamp: The start datetime.
         """
         if session is not None:
-            return await self.table.get_start_datetime_async(session=session)
+            return await self.table_schema.get_start_datetime_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_start_datetime_async(session=session)
+                return await self.table_schema.get_start_datetime_async(session=session)
 
     def get_end_datetime(self, session: Session | None = None) -> Timestamp:
         """Gets the end datetime from the table.
@@ -406,10 +406,10 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
             Timestamp: The end datetime.
         """
         if session is not None:
-            return self.table.get_end_datetime(session=session)
+            return self.table_schema.get_end_datetime(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_end_datetime(session=session)
+                return self.table_schema.get_end_datetime(session=session)
 
     async def get_end_datetime_async(self, session: AsyncSession | None = None) -> Timestamp:
         """Asynchronously gets the end datetime from the table.
@@ -421,10 +421,10 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
             Timestamp: The end datetime.
         """
         if session is not None:
-            return await self.table.get_end_datetime_async(session=session)
+            return await self.table_schema.get_end_datetime_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_end_datetime_async(session=session)
+                return await self.table_schema.get_end_datetime_async(session=session)
 
     def get_contents_nanostamps(self, session: Session | None = None) -> tuple[tuple[int, int, int], ...]:
         """Gets all nanostamps from the table.
@@ -436,10 +436,10 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
             tuple[tuple[int, int, int], ...]: The nanostamps.
         """
         if session is not None:
-            return self.table.get_all_nanostamps(session=session)
+            return self.table_schema.get_all_nanostamps(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_all_nanostamps(session=session)
+                return self.table_schema.get_all_nanostamps(session=session)
 
     async def get_contents_nanostamps_async(
         self,
@@ -454,7 +454,7 @@ class TimeContentsTableManifestation(ContentsTableManifestation):
             tuple[tuple[int, int, int], ...]: The nanostamps.
         """
         if session is not None:
-            return await self.table.get_all_nanostamps_async(session=session)
+            return await self.table_schema.get_all_nanostamps_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_all_nanostamps_async(session=session)
+                return await self.table_schema.get_all_nanostamps_async(session=session)
