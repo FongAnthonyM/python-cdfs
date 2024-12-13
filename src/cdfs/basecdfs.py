@@ -283,7 +283,7 @@ class BaseCDFS(CachingObject, BaseComposite):
         } | kwargs
         if self.contents_database is not None:
             self.contents_database.open(**kwargs)
-        elif self.contents_path.is_file():
+        elif not self.contents_path.is_file():
             self.contents_database = self.contents_database_type(**new_kwargs)
             if create and build and self._mode in {"a", "w"}:
                 self.contents_database.build_tables()
