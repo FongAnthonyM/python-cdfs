@@ -101,11 +101,27 @@ class BaseTimeContentsTableSchema(BaseContentsTableSchema):
                 timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
 
         tz_offset = timezone_offset(timezone).total_seconds() if isinstance(timezone, TZInfo) else timezone
-
+        
+        match start:
+            case None:
+                pass
+            case int():
+                pass
+            case _:
+                start = int(nanostamp(start))
+        
+        match end:
+            case None:
+                pass
+            case int():
+                pass
+            case _:
+                end = int(nanostamp(end))
+        
         kwargs.update(
             tz_offset=tz_offset,
-            start=int(nanostamp(start)),
-            end=int(nanostamp(end)),
+            start=start,
+            end=end,
             sample_rate=float(sample_rate)
         )
         return kwargs
@@ -259,9 +275,23 @@ class BaseTimeContentsTableSchema(BaseContentsTableSchema):
                 self.tz_offset = timezone
 
         if (start := dict_.get("start", None)) is not None:
-            self.start = int(nanostamp(start))
+            match start:
+                case None:
+                    pass
+                case int():
+                    pass
+                case _:
+                    start = int(nanostamp(start))
+            self.start = start
         if (end := dict_.get("end", None)) is not None:
-            self.end = int(nanostamp(end))
+            match end:
+                case None:
+                    pass
+                case int():
+                    pass
+                case _:
+                    end = int(nanostamp(end))
+            self.end = end
         if (sample_rate := dict_.get("sample_rate", None)) is not None:
             self.sample_rate = float(sample_rate)
         super().update(dict_)

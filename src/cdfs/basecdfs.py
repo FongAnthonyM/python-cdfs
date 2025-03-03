@@ -283,9 +283,7 @@ class BaseCDFS(CachingObject, BaseComposite):
         } | kwargs
         if self.contents_database is not None:
             self.contents_database.open(**kwargs)
-        elif not self.contents_path.is_file():
+        else:
             self.contents_database = self.contents_database_type(**new_kwargs)
             if create and build and self._mode in {"a", "w"}:
                 self.contents_database.build_tables()
-        else:
-            raise ValueError("Contents database does not exist.")
