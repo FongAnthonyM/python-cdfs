@@ -55,35 +55,70 @@ class BaseContentsTableSchema(BaseUpdateTableSchema):
     file_type: type | None = None
 
     # Class Methods #
+    # Base
     @classmethod
-    def format_entry_kwargs(
-        cls,
-        id_: str | UUID | None = None,
-        path: Path | str = "",
-        axis: int = 0,
-        shape: tuple[int] = (0,),
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Formats entry keyword arguments for creating or updating table entries.
-
+    def to_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs) -> dict[str, Any]:
+        """Casts Python types of an entry to SQLAlchemy types.
+        
+        Only table item elements (columns) which must cast to an SQLAlchemy type are cast to SQLAlchemy types. 
+        Additionally, all elements are optional, such that they do not need to be provided. This way any subset of the
+        elements can cast. For example: when updating a table item, a few elements can updated without providing all 
+        elements.  
+        
         Args:
-            id_: The ID of the entry, if specified.
-            path: The path of the content. Defaults to an empty string.
-            axis: The axis of the content. Defaults to 0.
-            shape: The shape of the content. Defaults to (0,).
+            dict_: A dictionary representing the entry with Python types.
             **kwargs: Additional keyword arguments for the entry.
 
         Returns:
-            dict[str, Any]: A dictionary of keyword arguments for the entry.
+            dict[str, Any]: A dictionary representing the entry with SQLAlchemy types.
         """
-        kwargs = super().format_entry_kwargs(id_=id_, **kwargs)
-        kwargs.update(
-            path=path.as_posix() if isinstance(path, Path) else path,
-            axis=axis,
-            shape=str(shape).strip("()"),
-        )
-        return kwargs
-
+        # Format parent entry
+        sql_entry = super().to_sql_types(dict_, **kwargs)
+        
+        # Format
+        if (path := sql_entry.get("path", None)) is not None:
+            match path:
+                case Path():
+                    sql_entry["path"] = path.as_posix()
+        if (shape := sql_entry.get("shape", None)) is not None:
+            match shape:
+                case tuple():
+                    sql_entry["shape"] = str(shape).strip("()")
+                case str():
+                    sql_entry["shape"] = shape.strip("()")
+        
+        # Return formatted entry
+        return sql_entry
+    
+    @classmethod
+    def from_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs: Any) -> dict[str, Any]:
+        """Casts SQLAlchemy types of an entry to Python types.
+        
+        Only table item elements (columns) which must cast to a Python type are cast to Python types. Additionally, all 
+        elements are optional, such that they do not need to be provided. This way any subset of the elements can cast. 
+        For example: when querying a table item, a few columns can be selected without providing all columns.
+        
+        Args:
+            dict_: A dictionary representing the entry with SQLAlchemy types.
+            **kwargs: Additional keyword arguments for the entry.
+            
+        Returns:
+            dict[str, Any]: A dictionary representing the entry with Python types.
+        """
+        # Format parent entry
+        python_entry = super().from_sql_types(dict_, **kwargs)
+        
+        # Format
+        if (path := python_entry.get("path", None)) is not None:
+            python_entry["path"] = Path(path)
+                
+        if (shape := python_entry.get("shape", None)) is not None:
+            python_entry["shape"] = tuple(int(i) for i in python_entry["shape"].split(", "))
+        
+        # Return formatted entry
+        return python_entry
+    
+    # Modification
     @classmethod
     def _correct_contents(cls, session: Session, path: Path) -> None:
         """Corrects the contents of the table based on the provided path.
@@ -144,52 +179,7 @@ class BaseContentsTableSchema(BaseUpdateTableSchema):
                 await cls._correct_contents_async(session=session, path=path)
         else:
             await cls._correct_contents_async(session=session, path=path)
-
-    # Instance Methods #
-    def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
-        """Updates the row of the table with the provided dictionary or keyword arguments.
-
-        Args:
-            dict_: A dictionary of attributes/columns to update. Defaults to None.
-            **kwargs: Additional keyword arguments for the attributes to update.
-        """
-        dict_ = ({} if dict_ is None else dict_) | kwargs
-        if (path := dict_.get("path", None)) is not None:
-            self.path = path.as_posix() if isinstance(path, Path) else path
-        if (axis := dict_.get("axis", None)) is not None:
-            self.axis = axis
-        if (shape := dict_.get("shape", None)) is not None:
-            self.shape = str(shape).strip("()")
-        super().update(dict_)
-
-    def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with the contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the row.
-        """
-        entry = super().as_dict()
-        entry.update(
-            path=self.path,
-            axis=self.axis,
-            shape=self.shape,
-        )
-        return entry
-
-    def as_entry(self) -> dict[str, Any]:
-        """Creates a dictionary with the entry contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the entry.
-        """
-        entry = super().as_dict()
-        entry.update(
-            path=self.path,
-            axis=self.axis,
-            shape=tuple(int(i) for i in self.shape.split(", ")),
-        )
-        return entry
-
+    
 
 class ContentsTableManifestation(UpdateTableManifestation):
     """The manifestation of a ContentsTable.

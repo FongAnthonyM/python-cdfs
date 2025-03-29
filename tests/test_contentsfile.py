@@ -61,5 +61,5 @@ class TestContentsFile:
         file_path = tmp_path / "test.db"
         db = self.class_(path=file_path, open_=True, create=True)
         info = db.get_meta_information()
-        assert "id_" in info
-        assert db._meta_information.id == info["id_"]
+        assert "id" in info
+        assert db._meta_information.id == info["id"]

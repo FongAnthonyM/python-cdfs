@@ -63,69 +63,92 @@ class BaseTimeContentsTableSchema(BaseContentsTableSchema):
     sample_rate: Mapped[float]
 
     # Class Methods #
+    # Base
     @classmethod
-    def format_entry_kwargs(
-        cls,
-        id_: str | UUID | None = None,
-        path: str = "",
-        axis: int = 0,
-        shape: tuple[int] = (0,),
-        timezone: str | datetime | int | None = None,
-        start: datetime | float | int | np.dtype | None = None,
-        end: datetime | float | int | np.dtype | None = None,
-        sample_rate: float | str | Decimal | None = None,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Formats entry keyword arguments for creating or updating table entries.
-
+    def to_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs) -> dict[str, Any]:
+        """Casts Python types of an entry to SQLAlchemy types.
+        
+        Only table item elements (columns) which must cast to an SQLAlchemy type are cast to SQLAlchemy types. 
+        Additionally, all elements are optional, such that they do not need to be provided. This way any subset of the
+        elements can cast. For example: when updating a table item, a few elements can updated without providing all 
+        elements.  
+        
         Args:
-            id_: The ID of the entry, if specified.
-            path: The path of the content. Defaults to an empty string.
-            axis: The axis of the content. Defaults to 0.
-            shape: The shape of the content. Defaults to (0,).
-            timezone: The timezone information. Defaults to None.
-            start: The start time. Defaults to None.
-            end: The end time. Defaults to None.
-            sample_rate: The sample rate of the content. Defaults to None.
+            dict_: A dictionary representing the entry with Python types.
             **kwargs: Additional keyword arguments for the entry.
 
         Returns:
-            dict[str, Any]: A dictionary of keyword arguments for the entry.
+            dict[str, Any]: A dictionary representing the entry with SQLAlchemy types.
         """
-        kwargs = super().format_entry_kwargs(id_=id_, path=path, axis=axis, shape=shape, **kwargs)
+        # Format parent entry
+        sql_entry = super().to_sql_types(dict_, **kwargs)
 
-        if isinstance(timezone, str):
-            if timezone.lower() == "local" or timezone.lower() == "localtime":
-                timezone = time.localtime().tm_gmtoff
-            else:
-                timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
+        # Format
+        if (tz_offset := sql_entry.get("tz_offset", None)) is not None:
+            match tz_offset:
+                case int():
+                    pass
+                case ZoneInfo():
+                    sql_entry["tz_offset"] = int(timezone_offset(tz_offset).total_seconds())
+                case str():
+                    if tz_offset.lower() in {"local", "localtime"}:
+                        sql_entry["tz_offset"] = time.localtime().tm_gmtoff
+                    else:
+                        sql_entry["tz_offset"] = int(timezone_offset(ZoneInfo(tz_offset)).total_seconds())
 
-        tz_offset = timezone_offset(timezone).total_seconds() if isinstance(timezone, TZInfo) else timezone
+        if (start := sql_entry.get("start", None)) is not None:
+            match start:
+                case int():
+                    pass
+                case _:
+                    sql_entry["start"] = int(nanostamp(start))
         
-        match start:
-            case None:
-                pass
-            case int():
-                pass
-            case _:
-                start = int(nanostamp(start))
+        if (end := sql_entry.get("end", None)) is not None:
+            match end:
+                case int():
+                    pass
+                case _:
+                    sql_entry["end"] = int(nanostamp(end))
         
-        match end:
-            case None:
-                pass
-            case int():
-                pass
-            case _:
-                end = int(nanostamp(end))
+        if (sample_rate := sql_entry.get("sample_rate", None)) is not None:
+            sql_entry["sample_rate"] = float(sample_rate)
         
-        kwargs.update(
-            tz_offset=tz_offset,
-            start=start,
-            end=end,
-            sample_rate=float(sample_rate)
-        )
-        return kwargs
+        # Return formatted entry
+        return sql_entry
+    
+    @classmethod
+    def from_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs: Any) -> dict[str, Any]:
+        """Casts SQLAlchemy types of an entry to Python types.
+        
+        Only table item elements (columns) which must cast to a Python type are cast to Python types. Additionally, all 
+        elements are optional, such that they do not need to be provided. This way any subset of the elements can cast. 
+        For example: when querying a table item, a few columns can be selected without providing all columns.
+        
+        Args:
+            dict_: A dictionary representing the entry with SQLAlchemy types.
+            **kwargs: Additional keyword arguments for the entry.
+            
+        Returns:
+            dict[str, Any]: A dictionary representing the entry with Python types.
+        """
+        # Format parent entry
+        python_entry = super().from_sql_types(dict_, **kwargs)
 
+        # Format
+        t_zone = None
+        if (tz_offset := python_entry.get("tz_offset", None)) is not None:
+            python_entry["tz_offset"] = t_zone = Timezone(timedelta(seconds=tz_offset))
+            
+        if (start := python_entry.get("start", None)) is not None:
+            python_entry["start"] = Timestamp.fromnanostamp(start, t_zone)
+            
+        if (end := python_entry.get("end", None)) is not None:
+            python_entry["end"] = Timestamp.fromnanostamp(end, t_zone)
+        
+        # Return formatted entry
+        return python_entry
+
+    # Queries
     @classmethod
     def get_tz_offsets_distinct(cls, session: Session) -> tuple | None:
         """Gets distinct timezone offsets from the table.
@@ -251,81 +274,6 @@ class BaseTimeContentsTableSchema(BaseContentsTableSchema):
         """
         statement = lambda_stmt(lambda: select(cls.start, cls.end, cls.tz_offset).order_by(cls.start))
         return tuple(await session.execute(statement))
-
-    # Instance Methods #
-    def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
-        """Updates the row of the table with the provided dictionary or keyword arguments.
-
-        Args:
-            dict_: A dictionary of attributes/columns to update. Defaults to None.
-            **kwargs: Additional keyword arguments for the attributes to update.
-        """
-        dict_ = ({} if dict_ is None else dict_) | kwargs
-
-        if (timezone := dict_.get("timezone", None)) is not None:
-            if isinstance(timezone, str):
-                if timezone.lower() == "local" or timezone.lower() == "localtime":
-                    timezone = time.localtime().tm_gmtoff
-                else:
-                    timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
-
-            if isinstance(timezone, TZInfo):
-                self.tz_offset = int(timezone_offset(timezone).total_seconds())
-            else:
-                self.tz_offset = timezone
-
-        if (start := dict_.get("start", None)) is not None:
-            match start:
-                case None:
-                    pass
-                case int():
-                    pass
-                case _:
-                    start = int(nanostamp(start))
-            self.start = start
-        if (end := dict_.get("end", None)) is not None:
-            match end:
-                case None:
-                    pass
-                case int():
-                    pass
-                case _:
-                    end = int(nanostamp(end))
-            self.end = end
-        if (sample_rate := dict_.get("sample_rate", None)) is not None:
-            self.sample_rate = float(sample_rate)
-        super().update(dict_)
-
-    def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with all the contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the row.
-        """
-        entry = super().as_dict()
-        entry.update(
-            tz_offset=self.tz_offset,
-            start=self.start,
-            end=self.end,
-            sample_rate=self.sample_rate,
-        )
-        return entry
-
-    def as_entry(self) -> dict[str, Any]:
-        """Creates a dictionary with the entry contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the entry.
-        """
-        entry = super().as_entry()
-        tzone = Timezone(timedelta(seconds=self.tz_offset))
-        entry.update(
-            tz_offset=tzone,
-            start=Timestamp.fromnanostamp(self.start, tzone),
-            end=Timestamp.fromnanostamp(self.end, tzone),
-            sample_rate=self.sample_rate,
-        )
-        return entry
 
 
 class TimeContentsTableManifestation(ContentsTableManifestation):
