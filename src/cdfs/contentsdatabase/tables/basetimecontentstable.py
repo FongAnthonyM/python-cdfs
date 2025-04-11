@@ -88,7 +88,7 @@ class BaseTimeContentsTableSchema(BaseContentsTableSchema):
             match tz_offset:
                 case int():
                     pass
-                case ZoneInfo():
+                case ZoneInfo() | Timezone():
                     sql_entry["tz_offset"] = int(timezone_offset(tz_offset).total_seconds())
                 case str():
                     if tz_offset.lower() in {"local", "localtime"}:

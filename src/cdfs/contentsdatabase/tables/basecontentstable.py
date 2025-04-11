@@ -120,7 +120,7 @@ class BaseContentsTableSchema(BaseUpdateTableSchema):
     
     # Modification
     @classmethod
-    def _correct_contents(cls, session: Session, path: Path) -> None:
+    def _correct_contents(cls, session: Session, path: Path, **kwargs: Any) -> None:
         """Corrects the contents of the table based on the provided path.
 
         Args:
@@ -133,7 +133,7 @@ class BaseContentsTableSchema(BaseUpdateTableSchema):
         raise NotImplemented
 
     @classmethod
-    def correct_contents(cls, session: Session, path: Path, begin: bool = False) -> None:
+    def correct_contents(cls, session: Session, path: Path, begin: bool = False, **kwargs: Any) -> None:
         """Corrects the contents of the table based on the provided path.
 
         Args:
@@ -143,12 +143,12 @@ class BaseContentsTableSchema(BaseUpdateTableSchema):
         """
         if begin:
             with session.begin():
-                cls._correct_contents(session=session, path=path)
+                cls._correct_contents(session=session, path=path, **kwargs)
         else:
-            cls._correct_contents(session=session, path=path)
+            cls._correct_contents(session=session, path=path, **kwargs)
 
     @classmethod
-    async def _correct_contents_async(cls, session: AsyncSession, path: Path) -> None:
+    async def _correct_contents_async(cls, session: AsyncSession, path: Path, **kwargs: Any) -> None:
         """Asynchronously corrects the contents of the table based on the provided path.
 
         Args:
@@ -166,6 +166,7 @@ class BaseContentsTableSchema(BaseUpdateTableSchema):
         session: AsyncSession,
         path: Path,
         begin: bool = False,
+        **kwargs: Any,
     ) -> None:
         """Asynchronously corrects the contents of the table based on the provided path.
 
@@ -176,9 +177,9 @@ class BaseContentsTableSchema(BaseUpdateTableSchema):
         """
         if begin:
             async with session.begin():
-                await cls._correct_contents_async(session=session, path=path)
+                await cls._correct_contents_async(session=session, path=path, **kwargs)
         else:
-            await cls._correct_contents_async(session=session, path=path)
+            await cls._correct_contents_async(session=session, path=path, **kwargs)
     
 
 class ContentsTableManifestation(UpdateTableManifestation):

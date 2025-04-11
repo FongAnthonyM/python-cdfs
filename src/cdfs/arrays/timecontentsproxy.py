@@ -617,7 +617,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             self.get_tzinfo()
 
         self.proxy_paths.clear()
-        entries = self.table.get_all(as_entries=True)
+        entries = self.table.get_all(as_python_dict=True)
 
         for entry in entries:
             del entry["id"]
