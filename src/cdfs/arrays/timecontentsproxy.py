@@ -15,6 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 from abc import abstractmethod
 from collections.abc import Iterable
+from collections import deque
 from datetime import datetime, timedelta
 from datetime import timezone as Timezone
 from datetime import tzinfo as TZInfo
@@ -433,7 +434,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
     # Instance Methods #
     def update_child(
         self,
-        path: str | list[str],
+        path: str | Path | list[str],
         open_: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -444,7 +445,13 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
             open_: Determines if the arrays will remain open after construction.
             **kwargs: The keyword arguments to create contained arrays.
         """
-        path = path.split('/') if isinstance(path, str) else path.copy()
+        match path:
+            case str():
+                path = path.split('/')
+            case Path():
+                path = list(path.parts)
+            case list():
+                path = path.copy()
 
         if path:
             child_path = self.path / path.pop(0)
@@ -465,26 +472,32 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
             self.proxies.sort(key=lambda p: p.start_timestamp)
             self.clear_caches()
 
-    def update_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs: Any) -> None:
+    def update_children(self, children: list[dict], open_: bool = False, sort: bool = False, **kwargs: Any) -> None:
         """Creates child proxies from the given child paths.
 
         Args:
-            paths: The child paths and keyword arguments to create arrays from.
+            children: The child paths and keyword arguments to create arrays from.
             open_: Determines if the proxies will remain open after construction.
             sort: Determines if the proxies will be sorted after update.
             **kwargs: The keyword arguments to create contained proxies.
         """
         children_info = {}
-        for path_kwargs in paths:
-            path = path_kwargs["path"]
-            path = path_kwargs["path"] = path.split('/') if isinstance(path, str) else path.copy()
+        for child in children:
+            match path := child["path"]:
+                case str():
+                    path = child["path"] = path.split('/')
+                case Path():
+                    path = child["path"] = list(path.parts)
+                case list():
+                    path = child["path"] = path.copy()
+
             if path:
                 child_path = self.path / path.pop(0)
                 info = children_info.get(child_path, None)
                 if info is None:
-                    children_info[child_path] = {"kwargs": path_kwargs | {"path": child_path}, "children": [path_kwargs]}
+                    children_info[child_path] = {"kwargs": child | {"path": child_path}, "children": [child]}
                 else:
-                    info["children"].append(path_kwargs)
+                    info["children"].append(child)
 
         for child_path, info in children_info.items():
             proxy = self.proxy_paths.get(child_path, None)
@@ -503,7 +516,7 @@ class TimeContentsNodeProxy(DirectoryTimeSeriesProxy):
             if update_leaf:
                 proxy.update_defaults(**info["kwargs"])
             else:
-                proxy.update_children(paths=info["children"], open_=open_, sort=sort, **kwargs)
+                proxy.update_children(children=info["children"], open_=open_, sort=sort, **kwargs)
 
         if sort:
             self.proxies.sort(key=lambda p: p.start_timestamp)
@@ -617,16 +630,21 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             self.get_tzinfo()
 
         self.proxy_paths.clear()
-        entries = self.table.get_all(as_python=True)
-
-        for entry in entries:
-            del entry["id"]
-            entry["tzinfo"] = entry.pop("tz_offset")
-            update_id = entry.pop("update_id")
-            if update_id > self.latest_update:
+        children = deque()
+        for item in self.table.get_all(as_python=True):
+            children.append({
+                "path": item["path"],
+                "shape": item["shape"],
+                "axis": item["axis"],
+                "sample_rate": item["sample_rate"],
+                "start": item["start"],
+                "end": item["end"],
+                "tzinfo": item["tz_offset"],
+            })
+            if (update_id := item["update_id"]) > self.latest_update:
                 self.latest_update = update_id
 
-        self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
+        self.update_children(children=children, open_=open_, sort=True, **kwargs)
 
     async def construct_proxies_async(self, open_=False, **kwargs: Any) -> None:
         """Constructs the arrays for this object asynchronously.
@@ -635,17 +653,25 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             open_: Determines if the arrays will remain open after construction.
             **kwargs: The keyword arguments to create contained arrays.
         """
-        self.proxy_paths.clear()
-        entries = await self.table.get_all_async(as_python=True)
+        if self.tzinfo is None:
+            self.get_tzinfo()
 
-        for entry in entries:
-            del entry["id"]
-            entry["tzinfo"] = entry.pop("tz_offset")
-            update_id = entry.pop("update_id")
-            if update_id > self.latest_update:
+        self.proxy_paths.clear()
+        children = deque()
+        for item in await self.table.get_all_async(as_python=True):
+            children.append({
+                "path": item["path"],
+                "shape": item["shape"],
+                "axis": item["axis"],
+                "sample_rate": item["sample_rate"],
+                "start": item["start"],
+                "end": item["end"],
+                "tzinfo": item["tz_offset"],
+            })
+            if (update_id := item["update_id"]) > self.latest_update:
                 self.latest_update = update_id
 
-        self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
+        self.update_children(children=children, open_=open_, sort=True, **kwargs)
 
     def update_proxies(self, open_=False, **kwargs: Any) -> None:
         """Updates the arrays for this object.
@@ -654,21 +680,28 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             open_: Determines if the arrays will remain open after the update.
             **kwargs: The keyword arguments to create contained arrays.
         """
-        entries = self.table.get_from_update(
+        items = self.table.get_from_update(
             update_id=self.latest_update,
             inclusive=False,
             as_python=True,
         )
 
-        if entries:
-            for entry in entries:
-                del entry["id"]
-                entry["tzinfo"] = entry.pop("tz_offset")
-                update_id = entry.pop("update_id")
-                if update_id > self.latest_update:
+        if items:
+            children = deque()
+            for item in items:
+                children.append({
+                    "path": item["path"],
+                    "shape": item["shape"],
+                    "axis": item["axis"],
+                    "sample_rate": item["sample_rate"],
+                    "start": item["start"],
+                    "end": item["end"],
+                    "tzinfo": item["tz_offset"],
+                })
+                if (update_id := item["update_id"]) > self.latest_update:
                     self.latest_update = update_id
 
-            self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
+            self.update_children(children=children, open_=open_, sort=True, **kwargs)
 
     async def update_proxies_async(self, open_=False, **kwargs: Any) -> None:
         """Updates the arrays for this object asynchronously.
@@ -677,21 +710,28 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             open_: Determines if the arrays will remain open after the update.
             **kwargs: The keyword arguments to create contained arrays.
         """
-        entries = await self.table.get_from_update_async(
+        items = await self.table.get_from_update_async(
             update_id=self.latest_update,
             inclusive=False,
             as_python=True,
         )
 
-        if entries:
-            for entry in entries:
-                del entry["id"]
-                entry["tzinfo"] = entry.pop("tz_offset")
-                update_id = entry.pop("update_id")
-                if update_id > self.latest_update:
+        if items:
+            children = deque()
+            for item in items:
+                children.append({
+                    "path": item["path"],
+                    "shape": item["shape"],
+                    "axis": item["axis"],
+                    "sample_rate": item["sample_rate"],
+                    "start": item["start"],
+                    "end": item["end"],
+                    "tzinfo": item["tz_offset"],
+                })
+                if (update_id := item["update_id"]) > self.latest_update:
                     self.latest_update = update_id
 
-            self.update_children(paths=entries, open_=open_, sort=True, **kwargs)
+            self.update_children(children=children, open_=open_, sort=True, **kwargs)
 
     # Time Information
     def get_tzinfo(self) -> TZInfo:

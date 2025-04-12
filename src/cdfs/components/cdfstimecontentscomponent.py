@@ -33,6 +33,8 @@ class CDFSTimeContentsComponent(BaseCDFSContentsComponent):
     # Attributes #
     proxy_type: type[TimeContentsProxy] = TimeContentsProxy
 
+    proxy: TimeContentsProxy | None = None
+
     # Properties #
     @property
     def start_datetime(self):
@@ -65,8 +67,28 @@ class CDFSTimeContentsComponent(BaseCDFSContentsComponent):
             TimeContentsProxy: The created contents proxy.
         """
         cdfs = self._composite()
-        return self.proxy_type(
+        proxy = self.proxy_type(
             table=self.contents_table,
             swmr=swmr,
             **({"path": cdfs.path, "mode": cdfs.mode} | kwargs),
         )
+        return proxy
+
+    def require_contents_proxy(self, swmr: bool = True, **kwargs) -> TimeContentsProxy:
+        """Requires a contents proxy for the CDFS component.
+
+        Args:
+            swmr: If True, enables single-writer multiple-reader mode. Defaults to True.
+            **kwargs: Additional keyword arguments for the proxy.
+
+        Returns:
+            TimeContentsProxy: The required contents proxy.
+        """
+        cdfs = self._composite()
+        if self.proxy is None:
+            self.proxy = self.proxy_type(
+                table=self.contents_table,
+                swmr=swmr,
+                **({"path": cdfs.path, "mode": cdfs.mode} | kwargs),
+            )
+        return self.proxy
