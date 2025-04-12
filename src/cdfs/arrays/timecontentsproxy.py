@@ -617,7 +617,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             self.get_tzinfo()
 
         self.proxy_paths.clear()
-        entries = self.table.get_all(as_python_dict=True)
+        entries = self.table.get_all(as_python=True)
 
         for entry in entries:
             del entry["id"]
@@ -636,7 +636,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
             **kwargs: The keyword arguments to create contained arrays.
         """
         self.proxy_paths.clear()
-        entries = await self.table.get_all_async(as_entries=True)
+        entries = await self.table.get_all_async(as_python=True)
 
         for entry in entries:
             del entry["id"]
@@ -657,7 +657,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         entries = self.table.get_from_update(
             update_id=self.latest_update,
             inclusive=False,
-            as_entries=True,
+            as_python=True,
         )
 
         if entries:
@@ -680,7 +680,7 @@ class TimeContentsProxy(TimeContentsNodeProxy):
         entries = await self.table.get_from_update_async(
             update_id=self.latest_update,
             inclusive=False,
-            as_entries=True,
+            as_python=True,
         )
 
         if entries:
