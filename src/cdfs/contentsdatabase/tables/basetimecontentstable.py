@@ -84,7 +84,7 @@ class BaseTimeContentsTableSchema(BaseContentsTableSchema):
         sql_entry = super().to_sql_types(dict_, **kwargs)
 
         # Format
-        if (tz_offset := sql_entry.get("tz_offset", None)) is not None:
+        if (tz_offset := sql_entry.get("tz_offset", sql_entry.pop("timezone", None))) is not None:
             match tz_offset:
                 case int():
                     pass

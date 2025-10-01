@@ -202,6 +202,7 @@ class ContentsTableManifestation(UpdateTableManifestation):
         path: Path,
         session: Session | None = None,
         begin: bool = False,
+        **kwargs: Any,
     ) -> None:
         """Corrects the contents of the file.
 
@@ -211,16 +212,17 @@ class ContentsTableManifestation(UpdateTableManifestation):
             begin: If True, begins a transaction for the operation. Defaults to False.
         """
         if session is not None:
-            self.table_schema.correct_contents(session=session, path=path, begin=begin)
+            self.table_schema.correct_contents(session=session, path=path, begin=begin, **kwargs)
         else:
             with self.create_session() as session:
-                self.table_schema.correct_contents(session=session, path=path, begin=True)
+                self.table_schema.correct_contents(session=session, path=path, begin=True, **kwargs)
 
     async def correct_contents_async(
         self,
         path: Path,
         session: AsyncSession | None = None,
         begin: bool = False,
+        **kwargs: Any,
     ) -> None:
         """Asynchronously corrects the contents of the file.
 
@@ -230,7 +232,7 @@ class ContentsTableManifestation(UpdateTableManifestation):
             begin: If True, begins a transaction for the operation. Defaults to False.
         """
         if session is not None:
-            await self.table_schema.correct_contents_async(session=session, path=path, begin=begin)
+            await self.table_schema.correct_contents_async(session=session, path=path, begin=begin, **kwargs)
         else:
             async with self.create_async_session() as session:
-                await self.table_schema.correct_contents_async(session=session, path=path, begin=True)
+                await self.table_schema.correct_contents_async(session=session, path=path, begin=True, **kwargs)
