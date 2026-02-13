@@ -1,13 +1,14 @@
-Reference
-=========
+API Reference
+=============
 
 .. contents::
     :local:
+    :depth: 2
     :backlinks: none
 
 
-cdfs.__main__
---------------------
+cdfs
+---------------------------
 
-.. automodule:: cdfs.__main__
+.. automodule:: cdfs
    :members:

@@ -1,15 +1,20 @@
 """basecdfs.py
 Base class for a Continuous Data File System (CDFS).
 """
-# Package Header #
-from .header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "cdfs"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__maintainer__ = "Anthony Fong"
+__email__ = ""
+
+__copyright__ = "Copyright 2022, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.4.0"
+__status__ = "Planning"
 
 # Imports #
 # Standard Libraries #
@@ -275,8 +280,8 @@ class BaseCDFS(CachingObject, BaseComposite):
             **kwargs: Additional keyword arguments.
         """
         new_kwargs = {
-            "path": self.contents_path, 
-            "schema": self.schema, 
+            "path": self.contents_path,
+            "schema": self.schema,
             "table_map": self.table_map,
             "open_": True,
             "create": True,

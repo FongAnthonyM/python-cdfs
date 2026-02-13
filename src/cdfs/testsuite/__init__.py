@@ -1,5 +1,9 @@
-"""header.py
-Information about this package.
+"""__init__.py
+Test suites for the cdfs package.
+
+Contains test suites for the cdfs package. It provides a structured testing framework to ensure the
+functionality and reliability of the cdfs components and is a basis for creating tests for hierarchies of
+components.
 """
 
 # Header #
@@ -17,22 +21,7 @@ __version__ = "0.4.0"
 __status__ = "Planning"
 
 # Imports #
-# Standard Libraries #
-
-# Third-Party Packages #
-
 # Local Packages #
 
 
 # Definitions #
-__all__ = [
-    "__package_name__",
-    "__author__",
-    "__credits__",
-    "__maintainer__",
-    "__email__",
-    "__copyright__",
-    "__license__",
-    "__version__",
-    "__status__",
-]

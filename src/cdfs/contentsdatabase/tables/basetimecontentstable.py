@@ -1,15 +1,20 @@
 """basetimecontentstable.py
 A table which tracks the contents of multiple files with time-related data.
 """
-# Package Header #
-from ...header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "cdfs"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__maintainer__ = "Anthony Fong"
+__email__ = ""
+
+__copyright__ = "Copyright 2022, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.4.0"
+__status__ = "Planning"
 
 # Imports #
 # Standard Libraries #
@@ -56,7 +61,7 @@ class BaseTimeContentsTableSchema(BaseContentsTableSchema):
     # Class Attributes #
     __mapper_args__ = {"polymorphic_identity": "timecontents"}
 
-    # Columns #
+    # Columns
     tz_offset: Mapped[int]
     start = mapped_column(BigInteger)
     end = mapped_column(BigInteger)

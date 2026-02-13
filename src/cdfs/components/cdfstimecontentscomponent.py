@@ -1,15 +1,20 @@
 """ cdfstimecontentscomponent.py.py
 A CDFS component for managing time-based contents in a CDFS.
 """
-# Package Header #
-from ..header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "cdfs"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__maintainer__ = "Anthony Fong"
+__email__ = ""
+
+__copyright__ = "Copyright 2022, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.4.0"
+__status__ = "Planning"
 
 # Imports #
 # Standard Libraries #
@@ -55,7 +60,7 @@ class CDFSTimeContentsComponent(BaseCDFSContentsComponent):
         return self.contents_table.get_end_datetime()
 
     # Instance Methods #
-    # Contents Proxy #
+    # Contents Proxy
     def create_contents_proxy(self, swmr: bool = True, **kwargs) -> TimeContentsProxy:
         """Creates a contents proxy for the CDFS component.
 
